@@ -1,0 +1,7 @@
+node_modules/
+.next/
+.amplify/
+out/
+build/
+amplify_outputs*.json
+src/lib/
