@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CheckList 画面モック一覧</title>
+    <link rel="stylesheet" href="mock.css" />
+    <style>
+      .wrap { max-width: 900px; margin: 0 auto; }
+      .wrap h1 { font-size: 1.4rem; margin: 0 0 0.3rem; }
+      .wrap .lead { color: var(--muted); font-size: 0.9rem; margin: 0 0 1.5rem; }
+      .link { display: block; text-decoration: none; color: inherit; }
+      .link:hover .card { border-color: var(--primary); }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>CheckList 画面モック</h1>
+      <p class="lead">
+        <code>doc/persistent/product-requirements.md</code> の画面一覧（S-01〜S-09）に対応する静的モックです。
+        レイアウトと情報設計の確認を目的とし、操作・遷移は動作しません。配色やコンポーネントは実装時の確定仕様ではありません。
+      </p>
+
+      <pre style="background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 1rem; font-size: 0.8rem; overflow-x: auto">S-01 サインイン ┬ S-02 サインアップ
+                 └ S-03 パスワード再設定
+  └ S-04 チェックリスト一覧（名称・日数・最終更新のみ／進捗は出さない）
+       ├ カードをタップ → S-05 詳細（準備実行・チェックは行の右端）
+       │    └ ⋯ メニュー ┬ S-06 持ち物編集（追加・修正・一括削除）
+       │                  ├ S-07 カテゴリ管理（並び順・削除）
+       │                  ├ S-08 タグ管理
+       │                  └ S-09 CSV入出力（パソコンのみ）
+       └ ヘッダー（パソコンのみ）→ S-09 CSV入出力</pre>
+
+      <a class="link" href="s01-signin.html">
+        <div class="card">
+          <h3>S-01 サインイン画面</h3>
+          <div class="meta">F-12 認証 ／ スマートフォン ／ AC-06</div>
+        </div>
+      </a>
+      <a class="link" href="s02-signup.html">
+        <div class="card">
+          <h3>S-02 サインアップ画面</h3>
+          <div class="meta">F-12 認証（アカウント登録・確認コード） ／ AC-06</div>
+        </div>
+      </a>
+      <a class="link" href="s03-password-reset.html">
+        <div class="card">
+          <h3>S-03 パスワード再設定画面</h3>
+          <div class="meta">F-12 認証（確認コード・新パスワード） ／ AC-06</div>
+        </div>
+      </a>
+      <a class="link" href="s04-checklists.html">
+        <div class="card">
+          <h3>S-04 チェックリスト一覧画面</h3>
+          <div class="meta">F-01 管理 / F-02 複製 ／ スマートフォン・デスクトップ ／ AC-01</div>
+        </div>
+      </a>
+      <a class="link" href="s05-checklist-detail.html">
+        <div class="card">
+          <h3>S-05 チェックリスト詳細画面</h3>
+          <div class="meta">F-06 フィルタ / F-07 チェック / F-08 一括リセット / F-09 数量計算 / F-10 日数 ／ AC-03〜AC-05</div>
+        </div>
+      </a>
+      <a class="link" href="s06-item-edit.html">
+        <div class="card">
+          <h3>S-06 持ち物編集画面</h3>
+          <div class="meta">F-03 持ち物（直接入力） / F-09 数量 / F-15 一括削除 ／ AC-02, AC-08</div>
+        </div>
+      </a>
+      <a class="link" href="s07-category.html">
+        <div class="card">
+          <h3>S-07 カテゴリ管理画面</h3>
+          <div class="meta">F-04 カテゴリ管理（直接入力・並び順・紐付く持ち物があれば削除不可） ／ AC-10</div>
+        </div>
+      </a>
+      <a class="link" href="s08-tag.html">
+        <div class="card">
+          <h3>S-08 タグ管理画面</h3>
+          <div class="meta">F-05 タグ管理（直接入力・付与されていれば削除不可） ／ AC-11</div>
+        </div>
+      </a>
+      <a class="link" href="s09-csv.html">
+        <div class="card">
+          <h3>S-09 CSV入出力画面</h3>
+          <div class="meta">F-13 インポート / F-14 エクスポート ／ パソコン専用 ／ AC-09</div>
+        </div>
+      </a>
+    </div>
+  </body>
+</html>

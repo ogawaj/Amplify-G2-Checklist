@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>S-07 カテゴリ管理画面 — CheckList モック</title>
+    <link rel="stylesheet" href="mock.css" />
+  </head>
+  <body>
+    <div class="mock-note">
+      <b>S-07 カテゴリ管理画面（モック）</b>
+      対応機能: F-04 カテゴリ管理 ／ 認証: 必要 ／ 対応: AC-10
+      <ul>
+        <li><b>直接入力</b>。名称は一覧上でそのまま書き換え、追加も末尾の入力待ち行に打ち込む（AC-10）</li>
+        <li>入口は S-05「⋯」メニュー →「カテゴリを管理」、または S-06 のツールバー</li>
+        <li>並び順はドラッグではなく<b>▲▼ボタン</b>で1段ずつ動かす（ドラッグはスコープ外）</li>
+        <li>
+          持ち物は必ずどれかのカテゴリに属するため、<b>持ち物が紐付いているカテゴリは削除できない</b>。移動先を選ばせる導線は設けず、削除できない理由だけを示す（AC-10）
+        </li>
+        <li>一覧に持ち物の件数は出さない。件数の集計を避け、削除を試みた時点で可否だけを判定する</li>
+      </ul>
+    </div>
+
+    <div class="screen-label">S-07 / 一覧（名称は直接編集・末尾の行から追加）</div>
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span>●●● ⌁ ▮</span></div>
+      <div class="appbar">
+        <span class="back">‹</span>
+        <h1>カテゴリを管理<span class="sub" style="display: block">藍君持ち物 ・ 7カテゴリ</span></h1>
+      </div>
+      <div class="body gray">
+        <p style="font-size: 0.78rem; color: var(--muted); margin: 0 0.2rem 0.6rem">
+          ここでの並び順が、チェックリスト詳細画面での表示順になります。
+        </p>
+        <div class="rows">
+          <div class="row">
+            <span class="name"><span class="iedit hint">手荷物</span></span>
+            <span class="btn ghost sm" style="opacity: 0.3">▲</span>
+            <span class="btn ghost sm">▼</span>
+            <span class="btn ghost sm" style="color: var(--danger)">🗑</span>
+          </div>
+          <div class="row">
+            <span class="name"><span class="iedit hint">食事</span></span>
+            <span class="btn ghost sm">▲</span>
+            <span class="btn ghost sm">▼</span>
+            <span class="btn ghost sm" style="color: var(--danger)">🗑</span>
+          </div>
+          <div class="row">
+            <span class="name"><span class="iedit hint">トイレ</span></span>
+            <span class="btn ghost sm">▲</span>
+            <span class="btn ghost sm">▼</span>
+            <span class="btn ghost sm" style="color: var(--danger)">🗑</span>
+          </div>
+          <div class="row">
+            <span class="name"><span class="iedit hint">お風呂</span></span>
+            <span class="btn ghost sm">▲</span>
+            <span class="btn ghost sm">▼</span>
+            <span class="btn ghost sm" style="color: var(--danger)">🗑</span>
+          </div>
+          <div class="row">
+            <span class="name"><span class="iedit hint">服</span></span>
+            <span class="btn ghost sm">▲</span>
+            <span class="btn ghost sm">▼</span>
+            <span class="btn ghost sm" style="color: var(--danger)">🗑</span>
+          </div>
+          <div class="row">
+            <span class="name"><span class="iedit hint">寝具</span></span>
+            <span class="btn ghost sm">▲</span>
+            <span class="btn ghost sm">▼</span>
+            <span class="btn ghost sm" style="color: var(--danger)">🗑</span>
+          </div>
+          <div class="row">
+            <span class="name"><span class="iedit hint">その他</span></span>
+            <span class="btn ghost sm">▲</span>
+            <span class="btn ghost sm" style="opacity: 0.3">▼</span>
+            <span class="btn ghost sm" style="color: var(--danger)">🗑</span>
+          </div>
+          <div class="row newrow">
+            <span class="name"><span class="iedit ph">＋ カテゴリを追加</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen-label">S-07 / 入力中（名称の直接編集と末尾行への追加）</div>
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span>●●● ⌁ ▮</span></div>
+      <div class="appbar">
+        <span class="back">‹</span>
+        <h1>カテゴリを管理<span class="sub" style="display: block">保存しました</span></h1>
+      </div>
+      <div class="body gray">
+        <div class="rows">
+          <div class="row">
+            <span class="name"><span class="iedit focus caret">手荷物（機内）</span></span>
+            <span class="btn ghost sm" style="opacity: 0.3">▲</span>
+            <span class="btn ghost sm">▼</span>
+            <span class="btn ghost sm" style="color: var(--danger)">🗑</span>
+          </div>
+          <div class="row">
+            <span class="name"><span class="iedit hint">食事</span></span>
+            <span class="btn ghost sm">▲</span>
+            <span class="btn ghost sm">▼</span>
+            <span class="btn ghost sm" style="color: var(--danger)">🗑</span>
+          </div>
+          <div class="row newrow">
+            <span class="name"><span class="iedit focus caret">常備薬</span><small>入力して確定すると末尾に追加されます</small></span>
+          </div>
+        </div>
+        <p style="font-size: 0.75rem; color: var(--muted); margin: 0.6rem 0.2rem 0">
+          入力欄から離れた時点で保存する。名称を空欄にして確定した場合は変更を取り消す。
+        </p>
+      </div>
+    </div>
+
+    <div class="screen-label">S-07 / 持ち物が紐付いているカテゴリの削除（AC-10: 削除できない）</div>
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span>●●● ⌁ ▮</span></div>
+      <div class="appbar"><span class="back">‹</span><h1>カテゴリを管理</h1></div>
+      <div class="dialog-bg">
+        <div class="dialog">
+          <h3>「お風呂」は削除できません</h3>
+          <p>
+            このカテゴリには持ち物が紐付いています。持ち物はどれかのカテゴリに属する必要があるためです。
+            先に持ち物を別のカテゴリへ移すか、持ち物を削除してから、もう一度お試しください。
+          </p>
+          <div class="actions">
+            <span class="btn">閉じる</span>
+            <span class="btn primary">持ち物を編集する</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen-label">S-07 / 持ち物のないカテゴリの削除（AC-10: 確認して削除）</div>
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span>●●● ⌁ ▮</span></div>
+      <div class="appbar"><span class="back">‹</span><h1>カテゴリを管理</h1></div>
+      <div class="dialog-bg">
+        <div class="dialog">
+          <h3>「その他」を削除しますか？</h3>
+          <p>このカテゴリに紐付く持ち物はありません。この操作は取り消せません。</p>
+          <div class="actions">
+            <span class="btn">キャンセル</span>
+            <span class="btn danger">削除する</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </body>
+</html>

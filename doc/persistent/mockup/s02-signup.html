@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>S-02 サインアップ画面 — CheckList モック</title>
+    <link rel="stylesheet" href="mock.css" />
+  </head>
+  <body>
+    <div class="mock-note">
+      <b>S-02 サインアップ画面（モック）</b>
+      対応機能: F-12 アカウント認証 ／ 認証: 不要 ／ 対応: AC-06
+      <ul>
+        <li>メールアドレスとパスワードでアカウントを登録する（AC-06）</li>
+        <li>登録したアカウントの認証情報を家族間で共有して使う（BR-01）。1世帯につき1アカウントの運用</li>
+        <li>メールアドレス宛の確認コード入力を挟む。登録完了後は自動でサインインした状態になる</li>
+      </ul>
+    </div>
+
+    <div class="screen-label">S-02 / ① アカウント登録</div>
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span>●●● ⌁ ▮</span></div>
+      <div class="body gray" style="display: grid; place-items: center; min-height: 560px">
+        <div style="width: 100%">
+          <div style="text-align: center; margin-bottom: 1.4rem">
+            <h1 style="margin: 0; font-size: 1.2rem">アカウントを登録</h1>
+            <p style="margin: 0.2rem 0 0; font-size: 0.82rem; color: var(--muted)">
+              登録したアカウントは家族で共有して使えます
+            </p>
+          </div>
+          <div class="card">
+            <div class="field">
+              <label>メールアドレス</label>
+              <div class="input ph">you@example.com</div>
+            </div>
+            <div class="field">
+              <label>パスワード</label>
+              <div class="input ph">••••••••</div>
+              <p style="margin: 0.3rem 0 0; font-size: 0.75rem; color: var(--muted)">8文字以上</p>
+            </div>
+            <div class="field">
+              <label>パスワード（確認）</label>
+              <div class="input ph">••••••••</div>
+            </div>
+            <div class="btn primary block">登録する</div>
+          </div>
+          <div style="text-align: center; margin-top: 0.7rem">
+            <span class="btn ghost sm">すでにアカウントをお持ちの方はサインイン</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen-label">S-02 / ② 確認コードの入力</div>
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span>●●● ⌁ ▮</span></div>
+      <div class="body gray" style="display: grid; place-items: center; min-height: 560px">
+        <div style="width: 100%">
+          <div style="text-align: center; margin-bottom: 1.4rem">
+            <h1 style="margin: 0; font-size: 1.2rem">確認コードを入力</h1>
+            <p style="margin: 0.2rem 0 0; font-size: 0.82rem; color: var(--muted)">
+              you@example.com 宛に6桁のコードを送信しました
+            </p>
+          </div>
+          <div class="card">
+            <div class="field">
+              <label>確認コード</label>
+              <div class="input ph" style="letter-spacing: 0.4em; text-align: center; font-size: 1.1rem">------</div>
+            </div>
+            <div class="btn primary block">認証して登録を完了</div>
+            <div style="text-align: center; margin-top: 0.7rem">
+              <span class="btn ghost sm">コードを再送する</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

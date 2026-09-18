@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>S-01 サインイン画面 — CheckList モック</title>
+    <link rel="stylesheet" href="mock.css" />
+  </head>
+  <body>
+    <div class="mock-note">
+      <b>S-01 サインイン画面（モック）</b>
+      対応機能: F-12 アカウント認証 ／ 認証: 不要 ／ 対応: AC-06
+      <ul>
+        <li>サインアップ（S-02）とパスワード再設定（S-03）への導線を置く</li>
+        <li>家族は、登録済みの1アカウントの認証情報を共有してサインインする運用（BR-01）</li>
+        <li>静的モックのため入力・遷移は動作しない</li>
+      </ul>
+    </div>
+
+    <div class="screen-label">S-01 / スマートフォン</div>
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span>●●● ⌁ ▮</span></div>
+      <div class="body gray" style="display: grid; place-items: center; min-height: 560px">
+        <div style="width: 100%">
+          <div style="text-align: center; margin-bottom: 1.6rem">
+            <div
+              style="
+                width: 64px; height: 64px; margin: 0 auto 0.7rem;
+                background: var(--primary); color: #fff; border-radius: 18px;
+                display: grid; place-items: center; font-size: 1.8rem;
+              "
+            >
+              ✓
+            </div>
+            <h1 style="margin: 0; font-size: 1.3rem">CheckList</h1>
+            <p style="margin: 0.2rem 0 0; font-size: 0.82rem; color: var(--muted)">忘れ物チェックリスト</p>
+          </div>
+
+          <div class="card">
+            <div class="field">
+              <label>メールアドレス</label>
+              <div class="input ph">you@example.com</div>
+            </div>
+            <div class="field">
+              <label>パスワード</label>
+              <div class="input ph">••••••••</div>
+            </div>
+            <div class="btn primary block">サインイン</div>
+            <div style="text-align: center; margin-top: 0.7rem">
+              <span class="btn ghost sm">パスワードをお忘れですか？</span>
+            </div>
+          </div>
+
+          <div class="card" style="text-align: center">
+            <div class="meta" style="margin-bottom: 0.5rem">はじめて利用する場合</div>
+            <div class="btn block">アカウントを登録</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

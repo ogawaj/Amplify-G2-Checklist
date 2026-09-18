@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>S-08 タグ管理画面 — CheckList モック</title>
+    <link rel="stylesheet" href="mock.css" />
+  </head>
+  <body>
+    <div class="mock-note">
+      <b>S-08 タグ管理画面（モック）</b>
+      対応機能: F-05 タグ管理 ／ 認証: 必要 ／ 対応: AC-11
+      <ul>
+        <li><b>直接入力</b>。名称は一覧上でそのまま書き換え、追加も末尾の入力待ち行に打ち込む（AC-11）</li>
+        <li>入口は S-05「⋯」メニュー →「タグを管理」、または S-06 のツールバー</li>
+        <li>カテゴリと同じく、<b>持ち物に付与されているタグは削除できない</b>。先に持ち物からタグを外す（AC-11）</li>
+        <li>一覧に付与件数は出さない。件数の集計を避け、削除を試みた時点で可否だけを判定する</li>
+      </ul>
+    </div>
+
+    <div class="screen-label">S-08 / 一覧（名称は直接編集・末尾の行から追加）</div>
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span>●●● ⌁ ▮</span></div>
+      <div class="appbar">
+        <span class="back">‹</span>
+        <h1>タグを管理<span class="sub" style="display: block">藍君持ち物 ・ 3タグ</span></h1>
+      </div>
+      <div class="body gray">
+        <p style="font-size: 0.78rem; color: var(--muted); margin: 0 0.2rem 0.6rem">
+          タグはチェックリスト詳細画面の絞り込みに使います。タグが1件も付いていない持ち物は常に表示されます。
+        </p>
+        <div class="rows">
+          <div class="row">
+            <span class="name"><span class="iedit hint">国内</span></span>
+            <span class="btn ghost sm" style="color: var(--danger)">🗑</span>
+          </div>
+          <div class="row">
+            <span class="name"><span class="iedit hint">海外</span></span>
+            <span class="btn ghost sm" style="color: var(--danger)">🗑</span>
+          </div>
+          <div class="row">
+            <span class="name"><span class="iedit hint">帰省</span></span>
+            <span class="btn ghost sm" style="color: var(--danger)">🗑</span>
+          </div>
+          <div class="row newrow">
+            <span class="name"><span class="iedit ph">＋ タグを追加</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen-label">S-08 / 入力中（名称の直接編集と末尾行への追加）</div>
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span>●●● ⌁ ▮</span></div>
+      <div class="appbar">
+        <span class="back">‹</span>
+        <h1>タグを管理<span class="sub" style="display: block">保存しました</span></h1>
+      </div>
+      <div class="body gray">
+        <div class="rows">
+          <div class="row">
+            <span class="name"><span class="iedit focus caret">帰省（多治見）</span></span>
+            <span class="btn ghost sm" style="color: var(--danger)">🗑</span>
+          </div>
+          <div class="row newrow">
+            <span class="name"><span class="iedit focus caret">日帰り</span><small>入力して確定すると末尾に追加されます</small></span>
+          </div>
+        </div>
+        <p style="font-size: 0.75rem; color: var(--muted); margin: 0.6rem 0.2rem 0">
+          名称を変えても、持ち物への付与の関係は保たれる。
+        </p>
+      </div>
+    </div>
+
+    <div class="screen-label">S-08 / 付与されているタグの削除（AC-11: 削除できない）</div>
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span>●●● ⌁ ▮</span></div>
+      <div class="appbar"><span class="back">‹</span><h1>タグを管理</h1></div>
+      <div class="dialog-bg">
+        <div class="dialog">
+          <h3>タグ「帰省」は削除できません</h3>
+          <p>
+            このタグは持ち物に付与されています。先に持ち物からこのタグを外してから、もう一度お試しください。
+          </p>
+          <div class="actions">
+            <span class="btn">閉じる</span>
+            <span class="btn primary">持ち物を編集する</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen-label">S-08 / どの持ち物にも付いていないタグの削除（AC-11: 確認して削除）</div>
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span>●●● ⌁ ▮</span></div>
+      <div class="appbar"><span class="back">‹</span><h1>タグを管理</h1></div>
+      <div class="dialog-bg">
+        <div class="dialog">
+          <h3>タグ「日帰り」を削除しますか？</h3>
+          <p>このタグが付いている持ち物はありません。この操作は取り消せません。</p>
+          <div class="actions">
+            <span class="btn">キャンセル</span>
+            <span class="btn danger">削除する</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </body>
+</html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>S-04 チェックリスト一覧画面 — CheckList モック</title>
+    <link rel="stylesheet" href="mock.css" />
+  </head>
+  <body>
+    <div class="mock-note">
+      <b>S-04 チェックリスト一覧画面（モック）</b>
+      対応機能: F-01 チェックリスト管理 / F-02 複製 ／ 認証: 必要 ／ 対応: AC-01
+      <ul>
+        <li>
+          一覧では持ち物を集計しない。進捗も件数も出さず、<b>名称・日数・最終更新日時</b>だけを並べる（AC-01）。
+          準備状況は詳細画面（S-05）で確認する
+        </li>
+        <li>「⋯」から複製・名称変更・削除。削除は確認ダイアログを挟む（AC-01）</li>
+        <li>CSV入出力（F-13 / F-14）の導線はスマートフォン幅では非表示。下段のデスクトップ表示のみに出す（AC-07）</li>
+        <li>最終更新日時はチェックリスト自体が持つ値で、持ち物の集計を伴わない</li>
+      </ul>
+    </div>
+
+    <div class="screen-label">S-04 / スマートフォン（通常時）</div>
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span>●●● ⌁ ▮</span></div>
+      <div class="appbar">
+        <h1>チェックリスト</h1>
+        <div class="icon">👤</div>
+      </div>
+      <div class="body gray">
+        <div class="card">
+          <div style="display: flex; align-items: flex-start">
+            <div style="flex: 1">
+              <h3>藍君持ち物</h3>
+              <div class="meta">4日 ・ 最終更新 9/17</div>
+            </div>
+            <span class="btn ghost sm">⋯</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display: flex; align-items: flex-start">
+            <div style="flex: 1">
+              <h3>大人持ち物</h3>
+              <div class="meta">4日 ・ 最終更新 9/15</div>
+            </div>
+            <span class="btn ghost sm">⋯</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display: flex; align-items: flex-start">
+            <div style="flex: 1">
+              <h3>日帰りおでかけ</h3>
+              <div class="meta">1日 ・ 最終更新 8/30</div>
+            </div>
+            <span class="btn ghost sm">⋯</span>
+          </div>
+        </div>
+
+        <div class="fab">＋ 新規作成</div>
+      </div>
+    </div>
+
+    <div class="screen-label">S-04 / 「⋯」メニューを開いた状態</div>
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span>●●● ⌁ ▮</span></div>
+      <div class="appbar">
+        <h1>チェックリスト</h1>
+        <div class="icon">👤</div>
+      </div>
+      <div class="dialog-bg" style="align-items: flex-end">
+        <div class="dialog" style="max-width: 100%">
+          <h3>藍君持ち物</h3>
+          <div class="rows" style="margin-top: 0.6rem">
+            <div class="row">✏️<span class="name">名称を変更</span></div>
+            <div class="row">
+              📋<span class="name">複製する<small>持ち物・カテゴリ・タグ・日数を引き継ぎ、チェックは未チェックで作成</small></span>
+            </div>
+            <div class="row" style="color: var(--danger)">🗑<span class="name">削除する</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen-label">S-04 / 削除の確認（AC-01: 確認操作を経てから実行）</div>
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span>●●● ⌁ ▮</span></div>
+      <div class="appbar">
+        <h1>チェックリスト</h1>
+        <div class="icon">👤</div>
+      </div>
+      <div class="dialog-bg">
+        <div class="dialog">
+          <h3>「藍君持ち物」を削除しますか？</h3>
+          <p>このチェックリストに登録された持ち物も併せて削除されます。この操作は取り消せません。</p>
+          <div class="actions">
+            <span class="btn">キャンセル</span>
+            <span class="btn danger">削除する</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen-label">S-04 / デスクトップ（CSV入出力の導線あり）</div>
+    <div class="desktop">
+      <div class="browserbar"><i></i><i></i><i></i><span class="url">checklist.example.com</span></div>
+      <div class="appbar">
+        <h1>チェックリスト</h1>
+        <span class="btn sm" style="background: rgba(255, 255, 255, 0.18); border-color: transparent; color: #fff">
+          ⇅ CSV入出力
+        </span>
+        <div class="icon">👤</div>
+      </div>
+      <div class="body gray">
+        <div class="cols">
+          <div class="card" style="margin: 0">
+            <div style="display: flex; align-items: flex-start">
+              <div style="flex: 1"><h3>藍君持ち物</h3><div class="meta">4日 ・ 最終更新 9/17</div></div>
+              <span class="btn ghost sm">⋯</span>
+            </div>
+          </div>
+          <div class="card" style="margin: 0">
+            <div style="display: flex; align-items: flex-start">
+              <div style="flex: 1"><h3>大人持ち物</h3><div class="meta">4日 ・ 最終更新 9/15</div></div>
+              <span class="btn ghost sm">⋯</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

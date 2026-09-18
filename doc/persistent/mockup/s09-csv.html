@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>S-09 CSV入出力画面 — CheckList モック</title>
+    <link rel="stylesheet" href="mock.css" />
+  </head>
+  <body>
+    <div class="mock-note">
+      <b>S-09 CSV入出力画面（モック・パソコン専用）</b>
+      対応機能: F-13 CSVインポート / F-14 CSVエクスポート ／ 認証: 必要 ／ 対応: AC-09
+      <ul>
+        <li>スマートフォン幅ではこの画面への導線を表示しない（AC-07）</li>
+        <li>出力と取り込みの列構成は同一。<b>識別子</b>列で既存の持ち物と突き合わせる（FR-10）</li>
+        <li>取り込みは<b>同期方式のみ</b>。CSVの内容が持ち物の正となり、CSVにない持ち物は削除されるため確認を必須にする（AC-09）</li>
+        <li>更新された持ち物のチェック状態は維持、新規登録分は未チェック（AC-09）</li>
+      </ul>
+    </div>
+
+    <div class="screen-label">S-09 / ① 入口（エクスポートとインポート）</div>
+    <div class="desktop">
+      <div class="browserbar"><i></i><i></i><i></i><span class="url">checklist.example.com/csv</span></div>
+      <div class="appbar">
+        <span class="back">‹</span>
+        <h1>CSV入出力</h1>
+        <div class="icon">👤</div>
+      </div>
+      <div class="body gray">
+        <div class="toolbar" style="margin-bottom: 1rem">
+          <div class="line">
+            <label>対象のチェックリスト</label>
+            <div class="input" style="width: 240px">藍君持ち物（97件） ▾</div>
+          </div>
+        </div>
+
+        <div class="cols">
+          <div class="panel">
+            <h2>⬇ CSVエクスポート</h2>
+            <p class="lead">登録済みの持ち物をCSVとして書き出します。表計算ソフトで編集し、そのまま取り込み直せます。</p>
+            <table style="margin-bottom: 0.9rem">
+              <tr><th>識別子</th><th>カテゴリ</th><th>持ち物名</th><th>1日あたり</th><th>タグ</th></tr>
+              <tr><td>it_001</td><td>手荷物</td><td>おむつ</td><td>4</td><td>国内;海外;帰省</td></tr>
+              <tr><td>it_014</td><td>トイレ</td><td>夜オムツ</td><td>2</td><td>国内;帰省</td></tr>
+              <tr><td>it_032</td><td>その他</td><td>母子手帳</td><td></td><td></td></tr>
+            </table>
+            <p class="lead">
+              文字コードはBOM付きUTF-8。表計算ソフトで開いても日本語が文字化けしません。「1日あたり」が空欄の行は数量なしの持ち物です。
+            </p>
+            <div class="btn primary block">⬇ CSVをダウンロード（97行）</div>
+          </div>
+
+          <div class="panel">
+            <h2>⬆ CSVインポート</h2>
+            <p class="lead">CSVファイルから持ち物を取り込みます。取り込み前に内容を確認できます。</p>
+            <div class="drop">ここにCSVファイルをドロップ<br /><span class="btn sm" style="margin-top: 0.5rem">ファイルを選択</span></div>
+            <div
+              style="
+                background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px;
+                padding: 0.6rem 0.8rem; margin-bottom: 0.9rem; font-size: 0.8rem; color: #78350f;
+              "
+            >
+              <b>取り込み後の持ち物はCSVの内容と一致します。</b>
+              識別子が一致する行は更新、識別子が空の行は新規登録、CSVに現れなかった既存の持ち物は<b>削除</b>されます。
+              まずエクスポートし、そのファイルを編集して取り込んでください。
+            </div>
+            <div class="btn block" style="opacity: 0.5">内容を確認する（ファイル未選択）</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen-label">S-09 / ② 取り込み前の確認（同期方式・AC-09）</div>
+    <div class="desktop">
+      <div class="browserbar"><i></i><i></i><i></i><span class="url">checklist.example.com/csv</span></div>
+      <div class="appbar"><span class="back">‹</span><h1>CSV入出力 ・ 内容の確認</h1><div class="icon">👤</div></div>
+      <div class="body gray">
+        <div class="panel">
+          <h2>checklist_藍君持ち物_20260918.csv</h2>
+          <p class="lead">取り込み先: 藍君持ち物 ／ 読み込み 99行（うち不備2行）</p>
+
+          <div class="summary">
+            <div class="stat add"><b>6</b><span>新規登録</span></div>
+            <div class="stat upd"><b>89</b><span>更新</span></div>
+            <div class="stat del"><b>2</b><span>削除</span></div>
+            <div class="stat ng"><b>2</b><span>取り込めない行</span></div>
+          </div>
+
+          <h3 style="font-size: 0.85rem; margin: 0 0 0.35rem">取り込まれる内容</h3>
+          <table style="margin-bottom: 1rem">
+            <tr><th>行</th><th>扱い</th><th>カテゴリ</th><th>持ち物名</th><th>数量</th><th>タグ</th><th>変更点</th></tr>
+            <tr><td>2</td><td>更新</td><td>手荷物</td><td>おむつ</td><td>5/日</td><td>国内;海外;帰省</td><td>数量 4→5</td></tr>
+            <tr><td>3</td><td>更新</td><td>手荷物</td><td>おむつ替えシート</td><td>2/日</td><td>国内;海外</td><td>変更なし</td></tr>
+            <tr><td>48</td><td><b style="color: var(--ok)">新規</b></td><td>その他</td><td>虫除けシート</td><td>1/日</td><td>国内;帰省</td><td>カテゴリ・タグは既存を使用</td></tr>
+            <tr><td>52</td><td><b style="color: var(--ok)">新規</b></td><td>常備薬</td><td>解熱剤</td><td>（なし）</td><td>海外</td><td>カテゴリ「常備薬」を新規作成</td></tr>
+            <tr><td>—</td><td><b style="color: var(--danger)">削除</b></td><td>お風呂</td><td>爪切り</td><td>（なし）</td><td></td><td>CSVに行がないため削除</td></tr>
+            <tr><td>—</td><td><b style="color: var(--danger)">削除</b></td><td>寝具</td><td>パジャマ</td><td>（なし）</td><td></td><td>CSVに行がないため削除</td></tr>
+          </table>
+
+          <h3 style="font-size: 0.85rem; margin: 0 0 0.35rem">取り込めない行（除外されます）</h3>
+          <table style="margin-bottom: 1rem">
+            <tr><th style="width: 60px">行</th><th>内容</th><th>理由</th></tr>
+            <tr><td>61</td><td>it_070,服,,3,国内</td><td class="err">持ち物名が空です</td></tr>
+            <tr><td>77</td><td>it_081,食事,ストローマグ,ななつ,</td><td class="err">1日あたりの数が数値ではありません（ななつ）</td></tr>
+          </table>
+
+          <div style="background: var(--danger-light); border: 1px solid #fecaca; border-radius: 8px; padding: 0.7rem 0.9rem; margin-bottom: 0.9rem; font-size: 0.83rem; color: #991b1b">
+            <b>CSVに行がないため、既存の持ち物2件が削除されます。</b>
+            削除される持ち物のチェック状態も併せて失われます。この操作は取り消せません。
+          </div>
+
+          <div style="display: flex; gap: 0.5rem; justify-content: flex-end">
+            <span class="btn">キャンセル</span>
+            <span class="btn primary">この内容で取り込む（新規6・更新89・削除2）</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen-label">S-09 / ③ 取り込み結果（AC-09）</div>
+    <div class="desktop">
+      <div class="browserbar"><i></i><i></i><i></i><span class="url">checklist.example.com/csv</span></div>
+      <div class="appbar"><span class="back">‹</span><h1>CSV入出力 ・ 取り込み結果</h1><div class="icon">👤</div></div>
+      <div class="body gray">
+        <div class="panel">
+          <h2 style="color: var(--ok)">✓ 取り込みが完了しました</h2>
+          <p class="lead">藍君持ち物 ／ 成功 97行・失敗 2行</p>
+          <div class="summary">
+            <div class="stat add"><b>6</b><span>新規登録</span></div>
+            <div class="stat upd"><b>89</b><span>更新</span></div>
+            <div class="stat del"><b>2</b><span>削除</span></div>
+            <div class="stat ng"><b>2</b><span>失敗</span></div>
+          </div>
+          <table style="margin-bottom: 1rem">
+            <tr><th style="width: 60px">行</th><th>内容</th><th>理由</th></tr>
+            <tr><td>61</td><td>it_070,服,,3,国内</td><td class="err">持ち物名が空です</td></tr>
+            <tr><td>77</td><td>it_081,食事,ストローマグ,ななつ,</td><td class="err">1日あたりの数が数値ではありません（ななつ）</td></tr>
+          </table>
+          <p class="lead">
+            更新された持ち物のチェック状態は取り込み前のまま維持されています。新規登録された6件は未チェックです。
+          </p>
+          <div style="display: flex; gap: 0.5rem; justify-content: flex-end">
+            <span class="btn">失敗した行をCSVで保存</span>
+            <span class="btn primary">チェックリストを開く</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

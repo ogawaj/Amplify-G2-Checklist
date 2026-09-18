@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>S-05 チェックリスト詳細画面 — CheckList モック</title>
+    <link rel="stylesheet" href="mock.css" />
+  </head>
+  <body>
+    <div class="mock-note">
+      <b>S-05 チェックリスト詳細画面（モック）</b>
+      対応機能: F-06 タグフィルタ / F-07 チェック操作 / F-08 一括リセット / F-09 数量計算 / F-10 日数設定 / F-11 進捗表示
+      ／ 認証: 必要 ／ 対応: AC-03, AC-04, AC-05, AC-07
+      <ul>
+        <li>準備状況のチェックは<b>行の右端・角丸の四角＋緑</b>。親指が届く位置に置き、S-06の削除対象の選択（<b>左端</b>・丸＋赤）と位置・形・色で区別する</li>
+        <li>数量バッジは計算結果を大きく、算出根拠（4/日×4日）を小さく併記する。単位は持たない（AC-04）</li>
+        <li>数量は「1日あたりの必要数」のみ。未設定の持ち物（サングラス、母子手帳など）には数量を表示しない（AC-04）</li>
+        <li>タグ未設定の持ち物（母子手帳など）は、どのタグで絞り込んでも常に表示される（AC-03）</li>
+        <li>右上の「⋯」が S-06 持ち物編集 / S-09 CSV入出力 への入口。CSV入出力はスマートフォン幅では項目ごと出さない</li>
+      </ul>
+    </div>
+
+    <div class="screen-label">S-05 / 通常時（フィルタなし・日数4日）</div>
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span>●●● ⌁ ▮</span></div>
+      <div class="appbar">
+        <span class="back">‹</span>
+        <h1>藍君持ち物<span class="sub" style="display: block">準備済み 32 / 97</span></h1>
+        <div class="icon">⋯</div>
+      </div>
+      <div class="body gray">
+        <div class="toolbar">
+          <div class="line">
+            <label>行き先</label>
+            <div class="chipbar">
+              <span class="chip on">すべて</span>
+              <span class="chip">国内</span>
+              <span class="chip">海外</span>
+              <span class="chip">帰省</span>
+            </div>
+          </div>
+          <div class="line">
+            <label>日数</label>
+            <span class="num">4</span>
+            <span style="font-size: 0.8rem; color: var(--muted)">日</span>
+            <span style="flex: 1"></span>
+            <span class="btn sm">↺ 一括リセット</span>
+          </div>
+        </div>
+
+        <div class="rows">
+          <div class="cat"><span>手荷物</span><span>6 / 9</span></div>
+          <div class="row done">
+            <span class="name">おむつ</span>
+            <span class="qty">16<small>4/日 × 4日</small></span>
+            <span class="cb on">✓</span>
+          </div>
+          <div class="row done">
+            <span class="name">おむつ替えシート</span>
+            <span class="qty">8<small>2/日 × 4日</small></span>
+            <span class="cb on">✓</span>
+          </div>
+          <div class="row done"><span class="name">お尻拭き、手口拭き</span><span class="cb on">✓</span></div>
+          <div class="row">
+            <span class="name">サングラス<small><span class="tag">海外</span></small></span>
+            <span class="cb"></span>
+          </div>
+          <div class="row"><span class="name">上着</span><span class="cb"></span></div>
+
+          <div class="cat"><span>食事</span><span>8 / 11</span></div>
+          <div class="row done">
+            <span class="name">お食事エプロン</span>
+            <span class="cb on">✓</span>
+          </div>
+          <div class="row"><span class="name">麦茶</span><span class="cb"></span></div>
+          <div class="row"><span class="name">薬</span><span class="cb"></span></div>
+
+          <div class="cat"><span>トイレ</span><span>5 / 5</span></div>
+          <div class="row done">
+            <span class="name">オムツ（宿泊分）</span>
+            <span class="qty">20<small>5/日 × 4日</small></span>
+            <span class="cb on">✓</span>
+          </div>
+          <div class="row done">
+            <span class="name">夜オムツ</span>
+            <span class="qty">8<small>2/日 × 4日</small></span>
+            <span class="cb on">✓</span>
+          </div>
+
+          <div class="cat"><span>服</span><span>7 / 9</span></div>
+          <div class="row done">
+            <span class="name">肌着</span>
+            <span class="qty">20<small>5/日 × 4日</small></span>
+            <span class="cb on">✓</span>
+          </div>
+          <div class="row">
+            <span class="name">スリッパ<small><span class="tag">海外</span></small></span>
+            <span class="cb"></span>
+          </div>
+
+          <div class="cat"><span>その他</span><span>4 / 8</span></div>
+          <div class="row done"><span class="name">母子手帳</span><span class="cb on">✓</span></div>
+          <div class="row"><span class="name">日焼け止め</span><span class="cb"></span></div>
+          <div class="row">
+            <span class="name">チャイルドシート<small><span class="tag">国内</span><span class="tag">帰省</span></small></span>
+            <span class="cb"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen-label">S-05 / タグフィルタ「海外」適用時（AC-03）</div>
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span>●●● ⌁ ▮</span></div>
+      <div class="appbar">
+        <span class="back">‹</span>
+        <h1>藍君持ち物<span class="sub" style="display: block">準備済み 28 / 71（海外で絞り込み中）</span></h1>
+        <div class="icon">⋯</div>
+      </div>
+      <div class="body gray">
+        <div class="toolbar">
+          <div class="line">
+            <label>行き先</label>
+            <div class="chipbar">
+              <span class="chip">すべて</span>
+              <span class="chip">国内</span>
+              <span class="chip on">海外 ✕</span>
+              <span class="chip">帰省</span>
+            </div>
+          </div>
+          <div class="line">
+            <label>日数</label>
+            <span class="num">7</span>
+            <span style="font-size: 0.8rem; color: var(--muted)">日</span>
+            <span style="flex: 1"></span>
+            <span class="btn sm">↺ 一括リセット</span>
+          </div>
+        </div>
+
+        <div class="rows">
+          <div class="cat"><span>手荷物</span><span>3 / 6</span></div>
+          <div class="row done">
+            <span class="name">おむつ</span>
+            <span class="qty">28<small>4/日 × 7日</small></span>
+            <span class="cb on">✓</span>
+          </div>
+          <div class="row">
+            <span class="name">サングラス<small><span class="tag">海外</span></small></span>
+            <span class="cb"></span>
+          </div>
+
+          <div class="cat"><span>服</span><span>5 / 7</span></div>
+          <div class="row done">
+            <span class="name">肌着</span>
+            <span class="qty">35<small>5/日 × 7日</small></span>
+            <span class="cb on">✓</span>
+          </div>
+          <div class="row">
+            <span class="name">スリッパ<small><span class="tag">海外</span></small></span>
+            <span class="cb"></span>
+          </div>
+
+          <div class="cat"><span>その他</span><span>3 / 6</span></div>
+          <div class="row done"><span class="name">母子手帳<small>タグ未設定のため常に表示</small></span><span class="cb on">✓</span></div>
+          <div class="row"><span class="name">日焼け止め</span><span class="cb"></span></div>
+        </div>
+        <p style="font-size: 0.75rem; color: var(--muted); margin: 0.6rem 0.2rem 0">
+          「チャイルドシート」（国内・帰省）などは非表示。持ち物が0件になったカテゴリ（トイレ）は見出しごと消える。
+        </p>
+      </div>
+    </div>
+
+    <div class="screen-label">S-05 / 「⋯」メニュー＝S-06・S-09への入口（スマートフォン）</div>
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span>●●● ⌁ ▮</span></div>
+      <div class="appbar">
+        <span class="back">‹</span>
+        <h1>藍君持ち物<span class="sub" style="display: block">準備済み 32 / 97</span></h1>
+        <div class="icon">⋯</div>
+      </div>
+      <div class="dialog-bg" style="align-items: flex-end">
+        <div class="dialog" style="max-width: 100%">
+          <h3>藍君持ち物</h3>
+          <div class="rows" style="margin-top: 0.6rem">
+            <div class="row">
+              ✏️<span class="name">持ち物を編集<small>追加・修正・一括削除（S-06へ）</small></span><span class="btn ghost sm">›</span>
+            </div>
+            <div class="row">🏷<span class="name">タグを管理<small>行き先タグの追加・名称変更・削除</small></span><span class="btn ghost sm">›</span></div>
+            <div class="row">📁<span class="name">カテゴリを管理<small>並び順の変更もここから</small></span><span class="btn ghost sm">›</span></div>
+            <div class="row">📝<span class="name">チェックリストの名称を変更</span><span class="btn ghost sm">›</span></div>
+          </div>
+          <p style="font-size: 0.72rem; color: var(--muted); margin: 0.6rem 0 0">
+            CSV入出力（S-09）はパソコンのみ。スマートフォンではこのメニューに項目を出さない（AC-07）。
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen-label">S-05 / 「⋯」メニュー（デスクトップ・CSV入出力あり）</div>
+    <div class="desktop">
+      <div class="browserbar"><i></i><i></i><i></i><span class="url">checklist.example.com/checklists/ai-kun</span></div>
+      <div class="appbar">
+        <span class="back">‹</span>
+        <h1>藍君持ち物<span class="sub" style="display: block">準備済み 32 / 97</span></h1>
+        <span class="btn sm" style="background: rgba(255, 255, 255, 0.18); border-color: transparent; color: #fff">
+          ✏️ 持ち物を編集
+        </span>
+        <span class="btn sm" style="background: rgba(255, 255, 255, 0.18); border-color: transparent; color: #fff">
+          ⇅ CSV入出力
+        </span>
+        <div class="icon">⋯</div>
+      </div>
+      <div class="body gray">
+        <p style="font-size: 0.8rem; color: var(--muted); margin: 0 0 0.7rem">
+          デスクトップでは画面幅に余裕があるため、「持ち物を編集」と「CSV入出力」をヘッダーに直接出す。
+        </p>
+        <div class="rows">
+          <div class="cat"><span>手荷物</span><span>6 / 9</span></div>
+          <div class="row done"><span class="name">おむつ</span>
+            <span class="qty">16<small>4/日 × 4日</small></span>
+            <span class="cb on">✓</span>
+          </div>
+          <div class="row">
+            <span class="name">サングラス<small><span class="tag">海外</span></small></span>
+            <span class="cb"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen-label">S-05 / 一括リセットの確認（AC-05: フィルタ中でも全件が対象）</div>
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span>●●● ⌁ ▮</span></div>
+      <div class="appbar"><span class="back">‹</span><h1>藍君持ち物</h1><div class="icon">⋯</div></div>
+      <div class="dialog-bg">
+        <div class="dialog">
+          <h3>すべてのチェックを外しますか？</h3>
+          <p>
+            準備済み32件のチェックを未チェックに戻します。<b>絞り込みで表示されていない持ち物も含め、97件すべて</b>が対象です。
+          </p>
+          <div class="actions">
+            <span class="btn">キャンセル</span>
+            <span class="btn primary">リセットする</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
