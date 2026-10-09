@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <title>requirements.html — task-02: CheckList 全機能の実装</title>
+    <style>
+      :root {
+        --primary: #2563eb; --border: #e2e8f0; --text: #1e293b;
+        --muted: #64748b; --code-bg: #f1f5f9;
+      }
+      * { box-sizing: border-box; }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        max-width: 860px; margin: 2rem auto; padding: 0 1.5rem 3rem;
+        line-height: 1.7; color: var(--text); background: #fff;
+      }
+      .page-header {
+        background: linear-gradient(135deg, #1e3a5f 0%, var(--primary) 100%);
+        color: #fff; padding: 1.5rem 2rem; border-radius: 10px; margin-bottom: 2rem;
+      }
+      .page-header .badge {
+        display: inline-block; background: rgba(255, 255, 255, 0.2);
+        font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+        padding: 0.2em 0.7em; border-radius: 999px; margin-bottom: 0.6rem;
+      }
+      .page-header h1 { margin: 0; font-size: 1.35rem; font-weight: 700; color: #fff; }
+      section {
+        margin-bottom: 1.5rem; padding: 1.25rem 1.5rem; border: 1px solid var(--border);
+        border-left: 4px solid var(--primary); border-radius: 6px; background: #fff;
+      }
+      section h2 {
+        margin: 0 0 0.9rem; font-size: 0.8rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.08em; color: var(--primary);
+      }
+      section p { margin: 0 0 0.5rem; font-size: 0.95rem; }
+      section p:last-child { margin-bottom: 0; }
+      code {
+        background: var(--code-bg); color: #c2410c; padding: 0.1em 0.35em;
+        border-radius: 3px; font-size: 0.87em; font-family: "SFMono-Regular", Consolas, monospace;
+      }
+      ul { margin: 0; padding: 0; list-style: none; }
+      ul li {
+        position: relative; padding: 0.35em 0 0.35em 1.8em;
+        font-size: 0.95rem; border-bottom: 1px solid #f1f5f9;
+      }
+      ul li:last-child { border-bottom: none; }
+      .stories li::before { content: "👤"; position: absolute; left: 0; top: 0.3em; font-size: 0.9em; }
+      .checklist li::before {
+        content: "☐"; position: absolute; left: 0; top: 0.3em;
+        color: var(--primary); font-size: 1.1em; line-height: 1.4;
+      }
+      .constraints li::before { content: "⚠️"; position: absolute; left: 0; top: 0.35em; font-size: 0.8em; }
+      section.constraint-section { border-left-color: #f59e0b; background: #fffbeb; }
+      section.constraint-section h2 { color: #92400e; }
+    </style>
+  </head>
+  <body>
+    <div class="page-header">
+      <span class="badge">Requirements</span>
+      <h1>task-02: CheckList 全機能の実装</h1>
+    </div>
+
+    <section>
+      <h2>サマリ</h2>
+      <p>
+        CheckList の全機能（F-01〜F-15）と全画面（S-01〜S-09）を実装する。
+        要求は <code>doc/persistent/product-requirements.md</code>、実現方式は <code>doc/persistent/functional-design.md</code>、
+        画面イメージは <code>doc/persistent/mockup/</code> を正とする。
+      </p>
+      <p>
+        フェーズA（データモデルと共通層）→ B（認証）→ C（一覧）→ D（詳細）→ E（持ち物編集）→ F（カテゴリ・タグ管理）→ G（CSV入出力）
+        の順に進め、各フェーズの完了時点でビルドが通る状態を保つ。
+      </p>
+    </section>
+
+    <section>
+      <h2>ユーザーストーリー</h2>
+      <ul class="stories">
+        <li>家族として、共有されたアカウントでサインインし、同じチェックリストを見ながら準備を分担したい（US-23・US-24）</li>
+        <li>利用者として、対象者や用途ごとに複数のチェックリストを作成・複製・削除したい（US-01〜US-04）</li>
+        <li>利用者として、持ち物にカテゴリ・タグ・1日あたりの必要数を設定して整備したい（US-05〜US-08）</li>
+        <li>利用者として、カテゴリとタグを追加・改名・並べ替え・削除して絞り込みの軸を整えたい（US-09・US-10）</li>
+        <li>利用者として、不要になった持ち物を選んでまとめて削除したい（US-11・US-12）</li>
+        <li>利用者として、行き先タグで絞り、日数から必要数を出し、チェックしながら荷造りしたい。次の準備は1操作で初期化したい（US-18〜US-22）</li>
+        <li>利用者として、持ち物をCSVで書き出し、表計算ソフトで直して取り込み直したい（US-13〜US-17）</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>受け入れ条件</h2>
+      <p>
+        <code>product-requirements.md</code> の AC-01〜AC-11 をすべて満たすことを前提に、本タスク固有の条件を次のとおり定める。
+      </p>
+      <ul class="checklist">
+        <li>S-01〜S-09 のすべてが <code>functional-design.md</code> §ルートパス定義のパスで開ける</li>
+        <li>未認証で <code>(auth-page)</code> 配下を開くと <code>/sign-in</code> へ遷移し、ルート（<code>/</code>）は認証状態に応じて振り分けられる</li>
+        <li>持ち物の追加・編集、カテゴリ・タグの追加・改名が、一覧上の直接入力で完結する（別画面・ダイアログを挟まない）</li>
+        <li>破壊的操作（チェックリスト削除・一括削除・一括リセット・CSV取り込み）はいずれも確認操作を挟む</li>
+        <li>準備状況のチェックは行の右端、削除対象の選択は行の左端に配置され、形と色でも区別できる</li>
+        <li>スマートフォン幅（768px未満）で横スクロールが発生せず、CSV入出力への導線が表示されない</li>
+        <li>持ち物150件規模で、詳細画面の表示・タグ絞り込み・日数変更・一括リセットが非機能要件の目標時間内に収まる</li>
+        <li>Lambda 関数が1件も追加されていない</li>
+        <li><code>shared/</code> が再作成されていない</li>
+        <li><code>npm run lint</code>・<code>npx tsc --noEmit</code>・<code>npx tsc --noEmit -p amplify/tsconfig.json</code> がエラー0で通り、<code>npm run build</code> が成功する</li>
+        <li><code>npm run sandbox</code> で4モデルを反映でき、実際のサインインから一連の操作が動作する</li>
+      </ul>
+    </section>
+
+    <section class="constraint-section">
+      <h2>制約事項</h2>
+      <ul class="constraints">
+        <li>task-01（サンプルコード削除）の完了が前提。未完了の場合は先に実施する</li>
+        <li>Lambda 関数を作らない。一括処理はフロントエンドの Service 層に置く（functional-design.md §一括処理）</li>
+        <li><code>shared/</code> は使用しない。共有定義は <code>src/app/</code> 配下に置く</li>
+        <li>レイヤー構成（Component → Hook → Service → Repository）を守る。Component にロジックを書かず、Hook から Repository を直接呼ばない</li>
+        <li><code>src/lib/shadcn/ui/</code> を直接編集しない。必要ならラップしたコンポーネントを作る</li>
+        <li>スコープ外（複数アカウント共有、外出履歴、ドラッグ並べ替え、未チェックのみ表示、外部共有・印刷、CSVのスマートフォン対応、カテゴリ・タグの一括削除、通知、オフライン利用）に手を出さない</li>
+        <li>モックは配色・コンポーネントの確定仕様ではない。レイアウトと情報設計の参照に留める</li>
+      </ul>
+    </section>
+  </body>
+</html>

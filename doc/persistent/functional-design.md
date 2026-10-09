@@ -65,8 +65,9 @@ Lambda関数を持たないため、`amplify/` はリソース定義のみとな
 | `amplify/auth/resource.ts`   | Cognito UserPoolの定義                                 |
 | `amplify/data/resource.ts`   | GraphQLスキーマ（4モデル）の定義                       |
 | `amplify/backend.ts`         | バックエンド統合定義・パスワードポリシー・タグ付与     |
+| `amplify/common/`            | CDK実行時の環境変数定義。`backend.ts` が環境名の解決に用いる |
 
-`amplify/functions/` および `amplify/common/` は使用しない。フロントエンドとバックエンドで共有するコードも発生しないため、`shared/` も使用しない。CSV列定義・上限値・数量計算は `src/app/` 配下に置く。
+`amplify/functions/` は使用しない。フロントエンドとバックエンドで共有するコードは発生しないため、`shared/` と `amplify/tsconfig.json` の `@shared/*` パスエイリアスは削除する。CSV列定義・上限値・数量計算は `src/app/` 配下に置く。
 
 | 配置先              | 内容                                                       |
 | ------------------- | ---------------------------------------------------------- |
@@ -311,7 +312,7 @@ CSVの解析・既存データとの突き合わせ・確認画面用の集計�
 
 Lambda関数は定義しない。
 
-テンプレートに含まれるサンプル関数（`ckl-say-hello` / `ckl-aggregate-access`）とサンプルモデル（`Todo` / `DailyAccessSummary`）、およびそれらに紐づく `amplify/functions/`・`amplify/common/`・`shared/` の各ファイルは本プロダクトで使用しないため削除する。
+テンプレートに含まれるサンプル関数（`ckl-say-hello` / `ckl-aggregate-access`）とサンプルモデル（`Todo` / `DailyAccessSummary`）、およびそれらに紐づく `amplify/functions/`・`shared/` の各ファイルは本プロダクトで使用しないため削除する。`amplify/common/` は `backend.ts` の環境名解決に用いるため残す。
 
 CSVエクスポート（F-14）も同様にサーバー側の処理を設けない。画面が保持済みの持ち物からフロントエンドのServiceで文字列を生成し、ブラウザでダウンロードする。
 

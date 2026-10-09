@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <title>requirements.html — task-01: テンプレートのサンプルコード削除</title>
+    <style>
+      :root {
+        --primary: #2563eb;
+        --primary-dark: #1e40af;
+        --primary-light: #eff6ff;
+        --border: #e2e8f0;
+        --text: #1e293b;
+        --muted: #64748b;
+        --code-bg: #f1f5f9;
+      }
+      * { box-sizing: border-box; }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        max-width: 860px; margin: 2rem auto; padding: 0 1.5rem 3rem;
+        line-height: 1.7; color: var(--text); background: #fff;
+      }
+      .page-header {
+        background: linear-gradient(135deg, #1e3a5f 0%, var(--primary) 100%);
+        color: #fff; padding: 1.5rem 2rem; border-radius: 10px; margin-bottom: 2rem;
+      }
+      .page-header .badge {
+        display: inline-block; background: rgba(255, 255, 255, 0.2);
+        font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+        padding: 0.2em 0.7em; border-radius: 999px; margin-bottom: 0.6rem;
+      }
+      .page-header h1 { margin: 0; font-size: 1.35rem; font-weight: 700; color: #fff; }
+      section {
+        margin-bottom: 1.5rem; padding: 1.25rem 1.5rem; border: 1px solid var(--border);
+        border-left: 4px solid var(--primary); border-radius: 6px; background: #fff;
+      }
+      section h2 {
+        margin: 0 0 0.9rem; font-size: 0.8rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.08em; color: var(--primary);
+      }
+      section p { margin: 0 0 0.5rem; font-size: 0.95rem; }
+      section p:last-child { margin-bottom: 0; }
+      code {
+        background: var(--code-bg); color: #c2410c; padding: 0.1em 0.35em;
+        border-radius: 3px; font-size: 0.87em; font-family: "SFMono-Regular", Consolas, monospace;
+      }
+      ul { margin: 0; padding: 0; list-style: none; }
+      ul li {
+        position: relative; padding: 0.35em 0 0.35em 1.8em;
+        font-size: 0.95rem; border-bottom: 1px solid #f1f5f9;
+      }
+      ul li:last-child { border-bottom: none; }
+      .stories li::before { content: "👤"; position: absolute; left: 0; top: 0.3em; font-size: 0.9em; }
+      .checklist li::before {
+        content: "☐"; position: absolute; left: 0; top: 0.3em;
+        color: var(--primary); font-size: 1.1em; line-height: 1.4;
+      }
+      .constraints li::before { content: "⚠️"; position: absolute; left: 0; top: 0.35em; font-size: 0.8em; }
+      section.constraint-section { border-left-color: #f59e0b; background: #fffbeb; }
+      section.constraint-section h2 { color: #92400e; }
+    </style>
+  </head>
+  <body>
+    <div class="page-header">
+      <span class="badge">Requirements</span>
+      <h1>task-01: テンプレートのサンプルコード削除</h1>
+    </div>
+
+    <section>
+      <h2>サマリ</h2>
+      <p>
+        Amplify-G2-Template 由来のサンプルコード（<code>Todo</code> / <code>DailyAccessSummary</code> モデル、
+        <code>ckl-say-hello</code> / <code>ckl-aggregate-access</code> 関数、<code>shared/</code>、
+        およびそれらを参照するフロントエンドの Hook・Service・Repository）を削除し、CheckList の実装に必要な土台だけを残す。
+      </p>
+      <p>
+        機能追加は行わない。task-02 でモデルと画面を実装するための前準備にあたる。
+      </p>
+    </section>
+
+    <section>
+      <h2>ユーザーストーリー</h2>
+      <ul class="stories">
+        <li>開発者として、サンプルモデルを削除したい。task-02 で4モデルを追加する際に <code>amplify/data/resource.ts</code> が二重管理にならないため</li>
+        <li>開発者として、サンプル Lambda を削除したい。Lambda を持たない設計（functional-design.md §Lambda関数一覧）に合わせるため</li>
+        <li>開発者として、<code>shared/</code> とそのパスエイリアスを削除したい。フロントエンドとバックエンドで共有するコードが発生しない設計に合わせるため</li>
+        <li>開発者として、サンプルを参照する Hook・Service・Repository を削除したい。参照先を失ったコードを残さないため</li>
+        <li>開発者として、ホーム画面を最小構成に置き換えたい。削除後もアプリケーションが起動する状態を保つため</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>受け入れ条件</h2>
+      <ul class="checklist">
+        <li><code>amplify/data/resource.ts</code> に <code>Todo</code> / <code>DailyAccessSummary</code> と <code>cklSayHello</code> / <code>cklAggregateAccess</code> が存在しない</li>
+        <li><code>amplify/functions/</code> が存在しない</li>
+        <li><code>amplify/common/</code> は <code>backend.ts</code> が参照するため残っている</li>
+        <li><code>amplify/backend.ts</code> から2関数の登録と環境変数注入ループが取り除かれている</li>
+        <li><code>amplify/backend.ts</code> のパスワードポリシー設定とタグ付与は変更されずに残っている</li>
+        <li><code>shared/</code> が存在せず、<code>amplify/tsconfig.json</code> の <code>@shared/*</code> パスエイリアスも削除されている</li>
+        <li><code>src/app/</code> 配下に <code>use-todo</code> / <code>use-access-summary</code> / <code>todo-service</code> / <code>access-summary-service</code> / <code>todo-repository</code> / <code>access-summary-repository</code> が存在しない</li>
+        <li>環境変数まわり（<code>enums/env-variable-*.ts</code> / <code>models/env-variable.ts</code> / <code>services/env-variable-service.ts</code> / <code>hooks/use-env-variable.ts</code>）は残っている</li>
+        <li>削除したモジュールへの <code>import</code> がリポジトリ内に残っていない</li>
+        <li><code>npm run lint</code> がエラー0で通る</li>
+        <li><code>npx tsc --noEmit</code> と <code>npx tsc --noEmit -p amplify/tsconfig.json</code> がエラー0で通る</li>
+        <li><code>npm run build</code> が成功する</li>
+      </ul>
+    </section>
+
+    <section class="constraint-section">
+      <h2>制約事項</h2>
+      <ul class="constraints">
+        <li>本タスクでは削除のみを行う。CheckList の4モデル追加は task-02 のフェーズA で行う</li>
+        <li><code>amplify/auth/resource.ts</code> は変更しない</li>
+        <li>ファイル削除は <code>git rm</code> を用いる（移動ではないため <code>git mv</code> は不要）</li>
+        <li>モデル削除は sandbox に反映すると既存テーブルが削除される。デプロイは task-02 のモデル追加とまとめて行い、本タスクでは必須としない</li>
+        <li>ホーム画面は task-02 のフェーズB・C で <code>/lists</code> への振り分けに置き換わる。本タスクでは最小限の表示に留める</li>
+      </ul>
+    </section>
+  </body>
+</html>

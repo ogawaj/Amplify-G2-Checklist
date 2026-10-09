@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <title>design.html — task-01: テンプレートのサンプルコード削除</title>
+    <style>
+      :root {
+        --primary: #2563eb; --border: #e2e8f0; --text: #1e293b;
+        --muted: #64748b; --code-bg: #f1f5f9;
+      }
+      * { box-sizing: border-box; }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        max-width: 860px; margin: 2rem auto; padding: 0 1.5rem 3rem;
+        line-height: 1.7; color: var(--text); background: #fff;
+      }
+      .page-header {
+        background: linear-gradient(135deg, #1e3a5f 0%, var(--primary) 100%);
+        color: #fff; padding: 1.5rem 2rem; border-radius: 10px; margin-bottom: 2rem;
+      }
+      .page-header .badge {
+        display: inline-block; background: rgba(255, 255, 255, 0.2);
+        font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+        padding: 0.2em 0.7em; border-radius: 999px; margin-bottom: 0.6rem;
+      }
+      .page-header h1 { margin: 0; font-size: 1.35rem; font-weight: 700; color: #fff; }
+      section {
+        margin-bottom: 1.5rem; padding: 1.25rem 1.5rem; border: 1px solid var(--border);
+        border-left: 4px solid var(--primary); border-radius: 6px; background: #fff;
+      }
+      section h2 {
+        margin: 0 0 0.9rem; font-size: 0.8rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.08em; color: var(--primary);
+      }
+      section h3 { margin: 1rem 0 0.4rem; font-size: 0.85rem; font-weight: 700; color: var(--text); }
+      section h3:first-of-type { margin-top: 0; }
+      section p { margin: 0 0 0.5rem; font-size: 0.95rem; }
+      section p:last-child { margin-bottom: 0; }
+      code {
+        background: var(--code-bg); color: #c2410c; padding: 0.1em 0.35em;
+        border-radius: 3px; font-size: 0.87em; font-family: "SFMono-Regular", Consolas, monospace;
+      }
+      ul { margin: 0; padding: 0; list-style: none; }
+      ul li {
+        position: relative; padding: 0.35em 0 0.35em 1.8em;
+        font-size: 0.95rem; border-bottom: 1px solid #f1f5f9;
+      }
+      ul li:last-child { border-bottom: none; }
+      .approach li::before, .impact li::before {
+        content: "▸"; position: absolute; left: 0; top: 0.3em; color: var(--primary); font-size: 0.9em;
+      }
+      section.constraint-section { border-left-color: #f59e0b; background: #fffbeb; }
+      section.constraint-section h2 { color: #92400e; }
+      table { border-collapse: collapse; width: 100%; font-size: 0.88rem; margin-top: 0.25rem; }
+      th, td { border: 1px solid var(--border); padding: 0.45em 0.75em; text-align: left; }
+      th { background: #f8fafc; font-weight: 600; }
+      .note { margin-top: 0.75rem; font-size: 0.88rem; color: var(--muted); }
+    </style>
+  </head>
+  <body>
+    <div class="page-header">
+      <span class="badge">Design</span>
+      <h1>task-01: テンプレートのサンプルコード削除</h1>
+    </div>
+
+    <section>
+      <h2>実装アプローチ</h2>
+      <ul class="approach">
+        <li><strong>葉から根の順に削除する。</strong>参照される側（Repository・Service）ではなく、参照する側（Component・Hook）から消し、各段階で両スコープの <code>tsc --noEmit</code>（ルート・<code>amplify/tsconfig.json</code>）が通る状態を保つ</li>
+        <li><strong>ホーム画面はヘッダーだけ残す。</strong><code>components/home/index.tsx</code> からサンプル3枚のカードとダイアログを削除し、アプリ名・環境バッジ・サインアウトのヘッダーだけを残す。task-02 のフェーズB でこのヘッダーを認証済みレイアウトに転用する</li>
+        <li><strong>GraphQL スキーマは空のモデル集合にしない。</strong><code>amplify/data/resource.ts</code> はモデルを1つも持たないと型生成が壊れるため、task-02 のフェーズA で4モデルを追加するまでの暫定措置を設計判断のとおり扱う</li>
+        <li><strong>削除は <code>git rm</code> で行う。</strong>ディレクトリ単位の削除は <code>git rm -r</code> を用いる</li>
+        <li><strong>検証は lint → tsc → build の順。</strong>参照漏れは型検査で、未使用 import は lint で検出する</li>
+      </ul>
+    </section>
+
+    <section class="constraint-section">
+      <h2>設計判断</h2>
+      <h3>データモデルを空にしない</h3>
+      <p>
+        <code>amplify/data/resource.ts</code> から <code>Todo</code> と <code>DailyAccessSummary</code> を削除すると、
+        <code>a.schema({})</code> となりモデルが0件になる。この状態では <code>ClientSchema</code> の型生成結果が空になり、
+        <code>generateClient&lt;Schema&gt;()</code> を参照している箇所が型エラーになる。
+      </p>
+      <p>
+        本タスクでは <strong>サンプルを参照するフロントエンドのファイルを同時に削除する</strong>ため、
+        <code>generateClient</code> の参照自体が残らず、モデル0件でも型検査は通る。
+        task-02 のフェーズA で4モデルを追加するまでの一時的な状態として許容する。
+        この期間に <code>npm run sandbox</code> を実行するとサンプルのテーブルが削除されるが、
+        保持すべきデータがないため影響はない。
+      </p>
+      <h3>amplify/common/ は削除しない</h3>
+      <p>
+        <code>amplify/backend.ts</code> が <code>./common/services/env-variable-service</code> から
+        <code>getEnvVariable()</code> を import し、環境名（<code>ENV_NAME</code>）の解決とタグ付与に用いている。
+        削除対象は <code>amplify/functions/</code> 配下の <code>common/</code> のみで、<code>amplify/common/</code> は残す。
+      </p>
+    </section>
+
+    <section>
+      <h2>変更ファイル一覧</h2>
+
+      <h3>削除</h3>
+      <table>
+        <tr><th>パス</th><th>役割</th></tr>
+        <tr><td><code>amplify/functions/</code>（配下すべて）</td><td>サンプル Lambda 2種と Lambda 共有層</td></tr>
+        <tr><td><code>shared/enums/batch-operation.ts</code></td><td>バッチ種別の定数</td></tr>
+        <tr><td><code>shared/utils/enum-utils.ts</code></td><td>Enum ユーティリティ（参照元なし）</td></tr>
+        <tr><td><code>src/app/hooks/use-todo.ts</code></td><td>Todo と Lambda サンプルの Hook</td></tr>
+        <tr><td><code>src/app/hooks/use-access-summary.ts</code></td><td>アクセス集計の Hook</td></tr>
+        <tr><td><code>src/app/services/todo-service.ts</code></td><td>Todo の Service</td></tr>
+        <tr><td><code>src/app/services/access-summary-service.ts</code></td><td>アクセス集計の Service</td></tr>
+        <tr><td><code>src/app/repositories/todo-repository.ts</code></td><td>Todo の Repository</td></tr>
+        <tr><td><code>src/app/repositories/access-summary-repository.ts</code></td><td>アクセス集計の Repository</td></tr>
+      </table>
+
+      <h3>修正</h3>
+      <table>
+        <tr><th>パス</th><th>変更内容</th></tr>
+        <tr><td><code>amplify/data/resource.ts</code></td><td>2モデルと2カスタムクエリ、関連 import、スキーマ末尾の <code>allow.resource()</code> を削除</td></tr>
+        <tr><td><code>amplify/backend.ts</code></td><td>2関数の import・<code>defineBackend</code> への登録・<code>lambdas</code> 配列と環境変数注入ループを削除。<code>env</code> とタグ付与、パスワードポリシーは残す</td></tr>
+        <tr><td><code>amplify/tsconfig.json</code></td><td><code>@shared/*</code> パスエイリアスを削除</td></tr>
+        <tr><td><code>src/app/components/home/index.tsx</code></td><td>サンプル3カードと2ダイアログ、対応する Hook・state・ハンドラー・未使用 import を削除。ヘッダーのみ残す</td></tr>
+      </table>
+
+      <h3>変更しない</h3>
+      <table>
+        <tr><th>パス</th><th>理由</th></tr>
+        <tr><td><code>amplify/common/</code></td><td><code>backend.ts</code> が環境名の解決に用いる</td></tr>
+        <tr><td><code>amplify/auth/resource.ts</code></td><td>認証設定は task-02 でもそのまま使う</td></tr>
+        <tr><td><code>src/app/enums/env-variable-*.ts</code> ほか環境変数一式</td><td>環境バッジの表示で継続して使う</td></tr>
+        <tr><td><code>src/app/providers/amplify-provider.tsx</code></td><td>Amplify の初期化と認証は task-02 で利用する</td></tr>
+        <tr><td><code>src/lib/shadcn/ui/</code></td><td>UI コンポーネントは task-02 で利用する</td></tr>
+        <tr><td><code>scripts/prepare-sandbox.cjs</code></td><td><code>postinstall</code> で環境変数ファイルを生成する</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>データ構造の変更</h2>
+      <p>GraphQL スキーマから次のモデル・操作が消える。追加は行わない。</p>
+      <table>
+        <tr><th>種別</th><th>名前</th><th>操作</th></tr>
+        <tr><td>モデル</td><td><code>Todo</code></td><td>削除</td></tr>
+        <tr><td>モデル</td><td><code>DailyAccessSummary</code></td><td>削除</td></tr>
+        <tr><td>クエリ</td><td><code>cklSayHello</code></td><td>削除</td></tr>
+        <tr><td>クエリ</td><td><code>cklAggregateAccess</code></td><td>削除</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>影響範囲</h2>
+      <ul class="impact">
+        <li><strong>変わる:</strong> ホーム画面の本体（3カードが消え、ヘッダーのみ）、GraphQL スキーマ（モデル0件）、デプロイ資材（Lambda 2件が消える）</li>
+        <li><strong>変わらない:</strong> 認証設定、環境変数の仕組み、パスワードポリシー、タグ付与、shadcn/ui、ルーティング構成</li>
+        <li><strong>一時的に壊れるもの:</strong> なし。削除する側と参照する側を同じタスクで消すため、完了時点で lint・型検査・ビルドはすべて通る</li>
+        <li><strong>後続への引き渡し:</strong> ヘッダーの実装は task-02 フェーズB で認証済みレイアウトに転用する。モデル0件の状態はフェーズA で解消する</li>
+      </ul>
+      <p class="note">
+        デプロイは task-02 のモデル追加とまとめて行う（requirements.html の制約事項）。
+        本タスクの検証はローカルの <code>npm run lint</code> / <code>npx tsc --noEmit</code> / <code>npx tsc --noEmit -p amplify/tsconfig.json</code> / <code>npm run build</code> で行う。ルートの tsc は <code>amplify/</code> を検査しないため、<code>backend.ts</code> と <code>data/resource.ts</code> の編集は後者で確認する。
+      </p>
+    </section>
+  </body>
+</html>

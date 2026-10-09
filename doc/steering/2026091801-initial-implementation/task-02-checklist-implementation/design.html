@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <title>design.html — task-02: CheckList 全機能の実装</title>
+    <style>
+      :root {
+        --primary: #2563eb; --border: #e2e8f0; --text: #1e293b;
+        --muted: #64748b; --code-bg: #f1f5f9;
+      }
+      * { box-sizing: border-box; }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        max-width: 860px; margin: 2rem auto; padding: 0 1.5rem 3rem;
+        line-height: 1.7; color: var(--text); background: #fff;
+      }
+      .page-header {
+        background: linear-gradient(135deg, #1e3a5f 0%, var(--primary) 100%);
+        color: #fff; padding: 1.5rem 2rem; border-radius: 10px; margin-bottom: 2rem;
+      }
+      .page-header .badge {
+        display: inline-block; background: rgba(255, 255, 255, 0.2);
+        font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+        padding: 0.2em 0.7em; border-radius: 999px; margin-bottom: 0.6rem;
+      }
+      .page-header h1 { margin: 0; font-size: 1.35rem; font-weight: 700; color: #fff; }
+      section {
+        margin-bottom: 1.5rem; padding: 1.25rem 1.5rem; border: 1px solid var(--border);
+        border-left: 4px solid var(--primary); border-radius: 6px; background: #fff;
+      }
+      section h2 {
+        margin: 0 0 0.9rem; font-size: 0.8rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.08em; color: var(--primary);
+      }
+      section h3 { margin: 1.1rem 0 0.4rem; font-size: 0.85rem; font-weight: 700; color: var(--text); }
+      section h3:first-of-type { margin-top: 0; }
+      section p { margin: 0 0 0.5rem; font-size: 0.95rem; }
+      section p:last-child { margin-bottom: 0; }
+      code {
+        background: var(--code-bg); color: #c2410c; padding: 0.1em 0.35em;
+        border-radius: 3px; font-size: 0.87em; font-family: "SFMono-Regular", Consolas, monospace;
+      }
+      ul { margin: 0; padding: 0; list-style: none; }
+      ul li {
+        position: relative; padding: 0.35em 0 0.35em 1.8em;
+        font-size: 0.95rem; border-bottom: 1px solid #f1f5f9;
+      }
+      ul li:last-child { border-bottom: none; }
+      .approach li::before, .impact li::before {
+        content: "▸"; position: absolute; left: 0; top: 0.3em; color: var(--primary); font-size: 0.9em;
+      }
+      section.constraint-section { border-left-color: #f59e0b; background: #fffbeb; }
+      section.constraint-section h2 { color: #92400e; }
+      table { border-collapse: collapse; width: 100%; font-size: 0.86rem; margin-top: 0.25rem; }
+      th, td { border: 1px solid var(--border); padding: 0.4em 0.7em; text-align: left; }
+      th { background: #f8fafc; font-weight: 600; }
+      .note { margin-top: 0.75rem; font-size: 0.88rem; color: var(--muted); }
+    </style>
+  </head>
+  <body>
+    <div class="page-header">
+      <span class="badge">Design</span>
+      <h1>task-02: CheckList 全機能の実装</h1>
+    </div>
+
+    <section>
+      <h2>実装アプローチ</h2>
+      <ul class="approach">
+        <li><strong>レイヤーを下から積む。</strong>各フェーズで Repository → Service → Hook → Component の順に実装する。Hook から Repository を直接呼ばない</li>
+        <li><strong>詳細データは1回だけ読む。</strong>チェックリストの持ち物・カテゴリ・タグを詳細画面で一括取得し、絞り込み・数量計算・進捗集計・削除可否判定はすべてクライアント側の Service で行う。操作のたびに再取得しない</li>
+        <li><strong>直接入力を1箇所に集約する。</strong>フォーカス喪失時の保存・楽観的更新・失敗時の巻き戻しを共通コンポーネントに実装し、持ち物・カテゴリ・タグで共用する</li>
+        <li><strong>一括処理を1つのユーティリティに集約する。</strong>同時実行数を制限した並列実行を Service に置き、リセット・一括削除・複製・チェックリスト削除・CSV取り込みで共用する</li>
+        <li><strong>確認ダイアログを共通化する。</strong>破壊的操作の確認のみ Dialog を使い、件数と取り消せない旨を渡す共通コンポーネントにする</li>
+      </ul>
+    </section>
+
+    <section class="constraint-section">
+      <h2>設計判断</h2>
+      <h3>詳細データを S-05〜S-08 で共有する</h3>
+      <p>
+        タグの削除可否（AC-11）とカテゴリの削除可否（AC-10）の判定には、チェックリスト内の持ち物一覧が必要になる。
+        件数を画面に出さない仕様のため集計APIは持たず、詳細画面で取得済みの持ち物配列を管理画面でも使う。
+        S-05〜S-08 は <code>/lists/[listId]</code> 配下に置き、読み込みを担う Hook を共有する。
+      </p>
+      <h3>一括処理の失敗を握りつぶさない</h3>
+      <p>
+        一括処理はロールバックしない（functional-design.md §一括処理）。成功件数と失敗件数を戻り値に含め、
+        画面で結果を提示する。処理中は同じ操作を再実行できないようにする。
+      </p>
+      <h3>認証ガードとヘッダーをレイアウトに置く</h3>
+      <p>
+        <code>(auth-page)/layout.tsx</code> に未認証時のリダイレクトと共通ヘッダー（アプリ名・環境バッジ・サインアウト）を集約する。
+        ヘッダーは task-01 で残した <code>components/home/index.tsx</code> の実装を転用し、<code>components/common/</code> へ移す。
+      </p>
+      <h3>一括処理をクライアント側で行う（DB規約との関係）</h3>
+      <p>
+        <code>coding-standards-db.md</code> §クエリの効率は「1件ずつのループ呼び出しを避け、カスタムmutationへの集約を検討する」とするが、
+        検討のうえ採用しない（functional-design.md §一括処理）。カスタムmutationでもAppSync経由の書き込みは1件ずつで回数が減らず、150件規模ではLambdaの起動時間の分だけ不利なため。
+        <code>architecture.md</code> §性能・バッチ処理に従い、行ごとの失敗は記録して続行し、順序依存のある段階（複製のチェックリスト作成 → カテゴリ・タグ作成 → 持ち物作成、削除の持ち物 → タグ・カテゴリ → 本体）は段階間を直列にする。
+      </p>
+      <h3>入力値の範囲と名称の一意性はフロントで検証する</h3>
+      <p>
+        日数（1〜60）・数量（1〜999）・CSV行数（500）・カテゴリ名とタグ名の一意性は、フロントの Service で検証する。
+        <code>architecture-db.md</code> はサーバー側で強制されない旨を述べるが、<code>api-design.md</code> §想定脅威モデルのとおり直接のAPI呼び出しは想定外とし、サーバー側での強制は行わない。
+      </p>
+      <h3>進捗の母集団</h3>
+      <p>
+        ヘッダーの進捗とカテゴリ見出しの件数は、<strong>タグ絞り込み後に表示されている持ち物</strong>を母集団とする（モック S-05 のとおり）。一括リセットの対象（絞り込みに関わらず全件）とは母集団が異なるのは意図した仕様である。
+      </p>
+      <h3>Repository の実装規約</h3>
+      <p>
+        <code>coding-standards-db.md</code> / <code>architecture-db.md</code> に従う。<code>generateClient&lt;Schema&gt;({ authMode: "userPool" })</code> は Repository のモジュール内でのみ生成する。
+        一覧取得は <code>checkListId</code> のセカンダリインデックスのクエリ関数で行い（<code>list</code> の <code>filter</code> は使わない）、<code>nextToken</code> を辿って全件を返す。
+        型付きクライアントが返す <code>errors</code> は加工せずに投げる。持ち物の数量を消すときは <code>null</code> を送る（<code>undefined</code> では更新されない）。
+      </p>
+      <h3>配列ユーティリティの置き場所</h3>
+      <p>
+        <code>coding-standards.md</code> §DRY は配列の汎用処理を <code>shared/utils/array-utils.ts</code> に置くとするが、本プロダクトはバックエンドのコードを持たず <code>shared/</code> を使わない設計のため、
+        フロント専用の <code>src/app/utils/array-utils.ts</code> に置く。lodash は使わない点は規約に従う。
+      </p>
+    </section>
+
+    <section>
+      <h2>データ構造の変更</h2>
+      <p>
+        GraphQL のモデル定義は <code>functional-design.md</code> §テーブル定義を正とする（<code>CheckList</code> / <code>Category</code> / <code>Tag</code> / <code>Item</code> の4モデル）。
+        本タスクで新たに定義するフロントエンド側の型は次のとおり。
+      </p>
+      <table>
+        <tr><th>型</th><th>内容</th></tr>
+        <tr><td><code>CheckList</code> / <code>Category</code> / <code>Tag</code> / <code>Item</code></td><td><code>Schema["Item"]["type"]</code> のようにスキーマから派生させる。フィールドを手書きで再定義しない</td></tr>
+        <tr><td><code>CsvRow</code></td><td>識別子・カテゴリ名・持ち物名・1日あたり・タグ名配列</td></tr>
+        <tr><td><code>CsvParseResult</code></td><td>正常行の配列と、行番号・理由を持つ失敗行の配列</td></tr>
+        <tr><td><code>ImportDiff</code></td><td>新規・更新・変更なし・削除・失敗の各配列</td></tr>
+        <tr><td><code>BulkResult</code></td><td>成功件数・失敗件数・失敗の理由</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>変更ファイル一覧</h2>
+
+      <h3>バックエンド・共通定義（フェーズA）</h3>
+      <table>
+        <tr><th>パス</th><th>役割</th></tr>
+        <tr><td><code>amplify/data/resource.ts</code></td><td>4モデルの定義・<code>checkListId</code> のインデックス・owner 認可</td></tr>
+        <tr><td><code>src/app/enums/check-list-limit.ts</code></td><td>日数・数量・CSV行数・同時実行数の上限</td></tr>
+        <tr><td><code>src/app/enums/csv-column.ts</code></td><td>CSV の列定義とヘッダー文字列</td></tr>
+        <tr><td><code>src/app/models/{check-list,category,tag,item}.ts</code></td><td>4モデルのドメイン型（スキーマから派生）</td></tr>
+        <tr><td><code>src/app/models/csv.ts</code></td><td>CSV 行・解析結果・取り込み差分の型</td></tr>
+        <tr><td><code>src/app/models/bulk-result.ts</code></td><td>一括処理の結果型</td></tr>
+        <tr><td><code>src/app/repositories/check-list-repository.ts</code></td><td>チェックリストのデータアクセス</td></tr>
+        <tr><td><code>src/app/repositories/category-repository.ts</code></td><td>カテゴリのデータアクセス</td></tr>
+        <tr><td><code>src/app/repositories/tag-repository.ts</code></td><td>タグのデータアクセス</td></tr>
+        <tr><td><code>src/app/repositories/item-repository.ts</code></td><td>持ち物のデータアクセス</td></tr>
+        <tr><td><code>src/app/services/concurrency-service.ts</code></td><td>同時実行数を制限した並列実行と結果の集約</td></tr>
+        <tr><td><code>src/app/utils/array-utils.ts</code></td><td>groupBy・keyBy 等の配列ユーティリティ（使う関数のみ）</td></tr>
+      </table>
+
+      <h3>Service（フェーズC〜G）</h3>
+      <table>
+        <tr><th>パス</th><th>役割</th></tr>
+        <tr><td><code>src/app/services/check-list-service.ts</code></td><td>作成（既定カテゴリ付き）・複製・配下ごとの削除</td></tr>
+        <tr><td><code>src/app/services/item-service.ts</code></td><td>持ち物の追加・更新・一括削除・一括リセット</td></tr>
+        <tr><td><code>src/app/services/category-service.ts</code></td><td>並び順の変更・名称重複の検査・削除可否の判定</td></tr>
+        <tr><td><code>src/app/services/tag-service.ts</code></td><td>名称重複の検査・削除可否の判定</td></tr>
+        <tr><td><code>src/app/services/item-quantity-service.ts</code></td><td>1日あたり×日数の計算</td></tr>
+        <tr><td><code>src/app/services/item-filter-service.ts</code></td><td>タグ絞り込みとカテゴリ別の整列・進捗集計</td></tr>
+        <tr><td><code>src/app/services/csv-service.ts</code></td><td>CSV の生成・解析・既存との差分算出</td></tr>
+      </table>
+
+      <h3>Hook</h3>
+      <table>
+        <tr><th>パス</th><th>役割</th></tr>
+        <tr><td><code>src/app/hooks/use-check-lists.ts</code></td><td>一覧の取得と作成・改名・複製・削除</td></tr>
+        <tr><td><code>src/app/hooks/use-check-list-detail.ts</code></td><td>持ち物・カテゴリ・タグの一括取得と共有。S-05〜S-08 で使う</td></tr>
+        <tr><td><code>src/app/hooks/use-check-state.ts</code></td><td>チェック操作・一括リセット・日数の更新</td></tr>
+        <tr><td><code>src/app/hooks/use-item-edit.ts</code></td><td>直接入力の保存・選択状態・一括削除</td></tr>
+        <tr><td><code>src/app/hooks/use-category.ts</code> / <code>use-tag.ts</code></td><td>カテゴリ・タグの追加・改名・並び替え・削除</td></tr>
+        <tr><td><code>src/app/hooks/use-csv.ts</code></td><td>エクスポート・ファイル解析・差分の保持・取り込み実行</td></tr>
+      </table>
+
+      <h3>ページ（ルーティング）</h3>
+      <table>
+        <tr><th>パス</th><th>役割</th></tr>
+        <tr><td><code>src/app/page.tsx</code></td><td>認証状態による <code>/lists</code> / <code>/sign-in</code> への振り分け</td></tr>
+        <tr><td><code>src/app/(public-page)/{sign-in,sign-up,password-reset}/page.tsx</code></td><td>S-01〜S-03</td></tr>
+        <tr><td><code>src/app/(auth-page)/layout.tsx</code></td><td>認証ガードと共通ヘッダー</td></tr>
+        <tr><td><code>src/app/(auth-page)/lists/page.tsx</code></td><td>S-04</td></tr>
+        <tr><td><code>src/app/(auth-page)/lists/[listId]/page.tsx</code></td><td>S-05</td></tr>
+        <tr><td><code>src/app/(auth-page)/lists/[listId]/{items,categories,tags,csv}/page.tsx</code></td><td>S-06〜S-09</td></tr>
+      </table>
+
+      <h3>コンポーネント</h3>
+      <table>
+        <tr><th>パス</th><th>役割</th></tr>
+        <tr><td><code>src/app/components/common/app-header.tsx</code></td><td>共通ヘッダー（task-01 のホームから転用）</td></tr>
+        <tr><td><code>src/app/components/common/confirm-dialog.tsx</code></td><td>破壊的操作の確認</td></tr>
+        <tr><td><code>src/app/components/common/inline-text.tsx</code></td><td>直接入力の共通入力欄</td></tr>
+        <tr><td><code>src/app/components/auth/*.tsx</code></td><td>サインイン・サインアップ・パスワード再設定のフォーム</td></tr>
+        <tr><td><code>src/app/components/check-list/*.tsx</code></td><td>一覧画面と各カード・操作メニュー</td></tr>
+        <tr><td><code>src/app/components/list-detail/*.tsx</code></td><td>詳細画面・ツールバー・チェック行</td></tr>
+        <tr><td><code>src/app/components/item/*.tsx</code></td><td>持ち物編集画面・編集行・追加行・選択バー</td></tr>
+        <tr><td><code>src/app/components/category/*.tsx</code> / <code>tag/*.tsx</code></td><td>カテゴリ管理・タグ管理の一覧と行</td></tr>
+        <tr><td><code>src/app/components/csv/*.tsx</code></td><td>CSV 入出力画面・取り込み確認・結果表示</td></tr>
+      </table>
+
+      <h3>削除</h3>
+      <table>
+        <tr><th>パス</th><th>理由</th></tr>
+        <tr><td><code>src/app/(auth-page)/home/</code></td><td><code>/lists</code> に置き換わる</td></tr>
+        <tr><td><code>src/app/components/home/</code></td><td>ヘッダーを <code>common/app-header.tsx</code> へ移したうえで削除</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>影響範囲</h2>
+      <ul class="impact">
+        <li><strong>変わる:</strong> <code>src/app/</code> のほぼ全域（ルーティング・画面・4層すべて）と <code>amplify/data/resource.ts</code></li>
+        <li><strong>変わらない:</strong> <code>amplify/auth/resource.ts</code>、<code>amplify/backend.ts</code>、<code>amplify/common/</code>、環境変数一式、<code>src/lib/shadcn/ui/</code>、<code>scripts/</code></li>
+        <li><strong>増えないもの:</strong> Lambda 関数、<code>shared/</code>、外部パッケージ（いずれも追加しない）</li>
+        <li><strong>デプロイ:</strong> フェーズA 完了後に <code>npm run sandbox</code> で4モデルを反映する（task-01 のモデル削除も同時に反映される）。スキーマ変更とアプリ層の変更は同じコミットにまとめる</li>
+        <li><strong>後続タスク:</strong> なし。本タスクの完了をもって初期実装が完了する</li>
+      </ul>
+    </section>
+  </body>
+</html>
