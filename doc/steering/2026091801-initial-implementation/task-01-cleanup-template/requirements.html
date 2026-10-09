@@ -91,7 +91,7 @@
     <section>
       <h2>受け入れ条件</h2>
       <ul class="checklist">
-        <li><code>amplify/data/resource.ts</code> に <code>Todo</code> / <code>DailyAccessSummary</code> と <code>cklSayHello</code> / <code>cklAggregateAccess</code> が存在しない</li>
+        <li><code>amplify/data/resource.ts</code> に <code>DailyAccessSummary</code> と <code>cklSayHello</code> / <code>cklAggregateAccess</code> が存在しない。<code>Todo</code> はモデル定義のみ残し、参照元は存在しない</li>
         <li><code>amplify/functions/</code> が存在しない</li>
         <li><code>amplify/common/</code> は <code>backend.ts</code> が参照するため残っている</li>
         <li><code>amplify/backend.ts</code> から2関数の登録と環境変数注入ループが取り除かれている</li>
@@ -110,6 +110,7 @@
       <h2>制約事項</h2>
       <ul class="constraints">
         <li>本タスクでは削除のみを行う。CheckList の4モデル追加は task-02 のフェーズA で行う</li>
+        <li>スキーマはモデルを1件以上必要とするため、<code>Todo</code> のモデル定義は task-02 フェーズA で4モデルに置き換えるまで残す</li>
         <li><code>amplify/auth/resource.ts</code> は変更しない</li>
         <li>ファイル削除は <code>git rm</code> を用いる（移動ではないため <code>git mv</code> は不要）</li>
         <li>モデル削除は sandbox に反映すると既存テーブルが削除される。デプロイは task-02 のモデル追加とまとめて行い、本タスクでは必須としない</li>

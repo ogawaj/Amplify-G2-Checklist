@@ -54,6 +54,7 @@
       }
       section.done-section { border-left-color: #16a34a; background: #f0fdf4; }
       section.done-section h2 { color: #15803d; }
+      .checklist li.done::before { content: "☑"; color: #16a34a; }
       .note { margin-top: 0.75rem; font-size: 0.88rem; color: var(--muted); }
     </style>
   </head>
@@ -68,46 +69,47 @@
 
       <h3>フェーズA: 参照する側（Component・Hook）の削除</h3>
       <ul class="checklist">
-        <li><code>src/app/components/home/index.tsx</code> から3枚のサンプルカード（Todos / Say Hello / アクセス集計）を削除</li>
-        <li><code>src/app/components/home/index.tsx</code> から2つの Dialog とその state・ハンドラーを削除</li>
-        <li><code>src/app/components/home/index.tsx</code> の未使用 import（Hook・Card・Dialog・Input・Label・Table・useState）を整理</li>
-        <li><code>src/app/components/home/index.tsx</code> の JSDoc をヘッダーのみの責務に合わせて書き換え</li>
-        <li><code>src/app/hooks/use-todo.ts</code> を削除</li>
-        <li><code>src/app/hooks/use-access-summary.ts</code> を削除</li>
+        <li class="done"><code>src/app/components/home/index.tsx</code> から3枚のサンプルカード（Todos / Say Hello / アクセス集計）を削除</li>
+        <li class="done"><code>src/app/components/home/index.tsx</code> から2つの Dialog とその state・ハンドラーを削除</li>
+        <li class="done"><code>src/app/components/home/index.tsx</code> の未使用 import（Hook・Card・Dialog・Input・Label・Table・useState）を整理</li>
+        <li class="done"><code>src/app/components/home/index.tsx</code> の JSDoc をヘッダーのみの責務に合わせて書き換え</li>
+        <li class="done"><code>src/app/hooks/use-todo.ts</code> を削除</li>
+        <li class="done"><code>src/app/hooks/use-access-summary.ts</code> を削除</li>
       </ul>
 
       <h3>フェーズB: Service・Repository の削除</h3>
       <ul class="checklist">
-        <li><code>src/app/services/todo-service.ts</code> を削除</li>
-        <li><code>src/app/services/access-summary-service.ts</code> を削除</li>
-        <li><code>src/app/repositories/todo-repository.ts</code> を削除</li>
-        <li><code>src/app/repositories/access-summary-repository.ts</code> を削除</li>
+        <li class="done"><code>src/app/services/todo-service.ts</code> を削除</li>
+        <li class="done"><code>src/app/services/access-summary-service.ts</code> を削除</li>
+        <li class="done"><code>src/app/repositories/todo-repository.ts</code> を削除</li>
+        <li class="done"><code>src/app/repositories/access-summary-repository.ts</code> を削除</li>
       </ul>
 
       <h3>フェーズC: shared/ の削除</h3>
       <ul class="checklist">
-        <li><code>shared/</code> をディレクトリごと削除</li>
-        <li><code>amplify/tsconfig.json</code> の <code>@shared/*</code> パスエイリアスを削除</li>
+        <li class="done"><code>shared/</code> をディレクトリごと削除</li>
+        <li class="done"><code>amplify/tsconfig.json</code> の <code>@shared/*</code> パスエイリアスを削除</li>
       </ul>
 
       <h3>フェーズD: バックエンドの削除</h3>
       <ul class="checklist">
-        <li><code>amplify/functions/</code> をディレクトリごと削除</li>
-        <li><code>amplify/backend.ts</code> から <code>cklSayHello</code> / <code>cklAggregateAccess</code> の import と <code>defineBackend</code> への登録を削除</li>
-        <li><code>amplify/backend.ts</code> から <code>lambdas</code> 配列と環境変数注入の <code>for</code> ループ、<code>LambdaFunction</code> の import を削除</li>
-        <li><code>amplify/data/resource.ts</code> から <code>Todo</code> と <code>DailyAccessSummary</code> のモデル定義を削除</li>
-        <li><code>amplify/data/resource.ts</code> から <code>cklSayHello</code> / <code>cklAggregateAccess</code> のカスタムクエリと import を削除</li>
-        <li><code>amplify/data/resource.ts</code> のスキーマ末尾の <code>.authorization((allow) =&gt; [allow.resource(cklAggregateAccess)])</code> を削除</li>
+        <li class="done"><code>amplify/functions/</code> をディレクトリごと削除</li>
+        <li class="done"><code>scripts/prepare-sandbox.cjs</code> の生成対象から <code>amplify/functions/common/enums/env-variable-sandbox</code> を除去</li>
+        <li class="done"><code>amplify/backend.ts</code> から <code>cklSayHello</code> / <code>cklAggregateAccess</code> の import と <code>defineBackend</code> への登録を削除</li>
+        <li class="done"><code>amplify/backend.ts</code> から <code>lambdas</code> 配列と環境変数注入の <code>for</code> ループ、<code>LambdaFunction</code> の import を削除</li>
+        <li class="done"><code>amplify/data/resource.ts</code> から <code>DailyAccessSummary</code> のモデル定義を削除（<code>Todo</code> は残す）</li>
+        <li class="done"><code>amplify/data/resource.ts</code> から <code>cklSayHello</code> / <code>cklAggregateAccess</code> のカスタムクエリと import を削除</li>
+        <li class="done"><code>amplify/data/resource.ts</code> のスキーマ末尾の <code>.authorization((allow) =&gt; [allow.resource(cklAggregateAccess)])</code> を削除</li>
       </ul>
 
       <h3>フェーズE: 検証</h3>
       <ul class="checklist">
-        <li><code>Todo</code> / <code>DailyAccessSummary</code> / <code>cklSayHello</code> / <code>cklAggregateAccess</code> / <code>@shared</code> の残存参照を grep で確認</li>
-        <li><code>npm run lint</code> を実行</li>
-        <li><code>npx tsc --noEmit</code> を実行</li>
-        <li><code>npx tsc --noEmit -p amplify/tsconfig.json</code> を実行</li>
-        <li><code>npm run build</code> を実行</li>
-        <li><code>amplify/common/</code> ・ <code>amplify/auth/</code> ・環境変数一式・<code>src/lib/shadcn/</code> が残っていることを確認</li>
+        <li class="done"><code>DailyAccessSummary</code> / <code>cklSayHello</code> / <code>cklAggregateAccess</code> / <code>@shared</code> の残存参照と、<code>Todo</code> の参照が <code>resource.ts</code> の定義以外にないことを grep で確認</li>
+        <li class="done"><code>npm run lint</code> を実行</li>
+        <li class="done"><code>npx tsc --noEmit</code> を実行</li>
+        <li class="done"><code>npx tsc --noEmit -p amplify/tsconfig.json</code> を実行</li>
+        <li class="done"><code>npm run build</code> を実行</li>
+        <li class="done"><code>amplify/common/</code> ・ <code>amplify/auth/</code> ・環境変数一式・<code>src/lib/shadcn/</code> が残っていることを確認</li>
       </ul>
     </section>
 
@@ -117,7 +119,7 @@
         <li><code>npm run lint</code> がエラー0で完了する</li>
         <li><code>npx tsc --noEmit</code> と <code>npx tsc --noEmit -p amplify/tsconfig.json</code> がエラー0で完了する</li>
         <li><code>npm run build</code> が成功する</li>
-        <li>削除した4つの識別子と <code>@shared</code> への参照がリポジトリ内に1件も残っていない</li>
+        <li>削除した3つの識別子と <code>@shared</code> への参照がリポジトリ内に1件も残っておらず、<code>Todo</code> は <code>resource.ts</code> の定義のみが残っている</li>
         <li>ホーム画面がアプリ名・環境バッジ・サインアウトのヘッダーのみで表示される</li>
         <li><code>amplify/common/</code> と認証設定・環境変数一式・shadcn/ui が削除されずに残っている</li>
       </ul>

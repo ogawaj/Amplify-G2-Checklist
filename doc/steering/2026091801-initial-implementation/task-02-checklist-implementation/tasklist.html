@@ -72,6 +72,8 @@
         <li><code>amplify/data/resource.ts</code> に <code>Category</code> / <code>Tag</code> / <code>Item</code> モデルを定義</li>
         <li>3モデルの <code>checkListId</code> にセカンダリインデックスを設定</li>
         <li>4モデルに <code>allow.owner()</code> を設定</li>
+        <li><code>amplify/data/resource.ts</code> から task-01 で残した <code>Todo</code> モデルと暫定コメントを削除</li>
+        <li><code>src/app/enums/cache-type.ts</code> の未使用定数 <code>TODOS</code> を削除（キャッシュキーが必要になった時点で定義する）</li>
         <li><code>npm run sandbox</code> で反映し、<code>amplify_outputs.json</code> の再生成を確認</li>
         <li><code>npx tsc --noEmit</code> と <code>npx tsc --noEmit -p amplify/tsconfig.json</code> で型エラーを確認</li>
         <li><code>src/app/models/</code> に4モデルのドメイン型を <code>Schema</code> から派生して作成</li>

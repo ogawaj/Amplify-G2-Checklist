@@ -72,10 +72,9 @@ AWS 認証情報は事前に `aws configure --profile <プロファイル名>` �
 
 `npm install`（または `npm ci`）の **postinstall** で `scripts/prepare-sandbox.cjs` が実行され、各 `env-variable-sandbox.example.ts` から `env-variable-sandbox.ts` が自動生成されます（既存ファイルは上書きしません）。
 
-対象は以下の 3 箇所：
+対象は以下の 2 箇所：
 
 - `src/app/enums/env-variable-sandbox.ts`
-- `amplify/functions/common/enums/env-variable-sandbox.ts`
 - `amplify/common/enums/env-variable-sandbox.ts`
 
 各 `env-variable-sandbox.ts` は `.gitignore` で管理外のため、**個人の値で編集してもコミット対象になりません**。値を変更したいときは生成されたファイルを直接編集してください。

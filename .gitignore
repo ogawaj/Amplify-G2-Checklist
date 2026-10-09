@@ -41,6 +41,5 @@ amplify_outputs*
 amplifyconfiguration*
 
 # sandbox 環境変数
-amplify/functions/common/enums/env-variable-sandbox.ts
 amplify/common/enums/env-variable-sandbox.ts
 src/app/enums/env-variable-sandbox.ts

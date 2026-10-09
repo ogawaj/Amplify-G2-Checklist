@@ -68,7 +68,7 @@
       <ul class="approach">
         <li><strong>葉から根の順に削除する。</strong>参照される側（Repository・Service）ではなく、参照する側（Component・Hook）から消し、各段階で両スコープの <code>tsc --noEmit</code>（ルート・<code>amplify/tsconfig.json</code>）が通る状態を保つ</li>
         <li><strong>ホーム画面はヘッダーだけ残す。</strong><code>components/home/index.tsx</code> からサンプル3枚のカードとダイアログを削除し、アプリ名・環境バッジ・サインアウトのヘッダーだけを残す。task-02 のフェーズB でこのヘッダーを認証済みレイアウトに転用する</li>
-        <li><strong>GraphQL スキーマは空のモデル集合にしない。</strong><code>amplify/data/resource.ts</code> はモデルを1つも持たないと型生成が壊れるため、task-02 のフェーズA で4モデルを追加するまでの暫定措置を設計判断のとおり扱う</li>
+        <li><strong>GraphQL スキーマは空のモデル集合にしない。</strong><code>a.schema({})</code> は型エラーになるため、<code>Todo</code> のモデル定義だけを残す（設計判断を参照）</li>
         <li><strong>削除は <code>git rm</code> で行う。</strong>ディレクトリ単位の削除は <code>git rm -r</code> を用いる</li>
         <li><strong>検証は lint → tsc → build の順。</strong>参照漏れは型検査で、未使用 import は lint で検出する</li>
       </ul>
@@ -78,16 +78,12 @@
       <h2>設計判断</h2>
       <h3>データモデルを空にしない</h3>
       <p>
-        <code>amplify/data/resource.ts</code> から <code>Todo</code> と <code>DailyAccessSummary</code> を削除すると、
-        <code>a.schema({})</code> となりモデルが0件になる。この状態では <code>ClientSchema</code> の型生成結果が空になり、
-        <code>generateClient&lt;Schema&gt;()</code> を参照している箇所が型エラーになる。
+        <code>a.schema({})</code> はモデル0件を受け付けず型エラーになる（引数の型が <code>never</code> に解決される）。
+        <code>as never</code> で回避すると <code>architecture.md</code> の設計原則8（型アサーションで型チェックを迂回しない）に反するため採らない。
       </p>
       <p>
-        本タスクでは <strong>サンプルを参照するフロントエンドのファイルを同時に削除する</strong>ため、
-        <code>generateClient</code> の参照自体が残らず、モデル0件でも型検査は通る。
-        task-02 のフェーズA で4モデルを追加するまでの一時的な状態として許容する。
-        この期間に <code>npm run sandbox</code> を実行するとサンプルのテーブルが削除されるが、
-        保持すべきデータがないため影響はない。
+        <code>Todo</code> のモデル定義だけを残し、task-02 フェーズA で4モデルを追加する際に削除する。参照元（Hook・Service・Repository・ホーム画面）は本タスクですべて削除するため、残るのはスキーマ上の定義のみとなる。
+        スキーマ変更とアプリ層の変更を同じコミットにまとめる規約（<code>architecture-db.md</code>）にも合い、空のスキーマを sandbox に反映する状態も生じない。
       </p>
       <h3>amplify/common/ は削除しない</h3>
       <p>
@@ -117,9 +113,11 @@
       <h3>修正</h3>
       <table>
         <tr><th>パス</th><th>変更内容</th></tr>
-        <tr><td><code>amplify/data/resource.ts</code></td><td>2モデルと2カスタムクエリ、関連 import、スキーマ末尾の <code>allow.resource()</code> を削除</td></tr>
+        <tr><td><code>amplify/data/resource.ts</code></td><td><code>DailyAccessSummary</code> と2カスタムクエリ、関連 import、スキーマ末尾の <code>allow.resource()</code> を削除。<code>Todo</code> は残す</td></tr>
         <tr><td><code>amplify/backend.ts</code></td><td>2関数の import・<code>defineBackend</code> への登録・<code>lambdas</code> 配列と環境変数注入ループを削除。<code>env</code> とタグ付与、パスワードポリシーは残す</td></tr>
         <tr><td><code>amplify/tsconfig.json</code></td><td><code>@shared/*</code> パスエイリアスを削除</td></tr>
+        <tr><td><code>scripts/prepare-sandbox.cjs</code></td><td>生成対象から <code>amplify/functions/common/enums/env-variable-sandbox</code> を除去</td></tr>
+        <tr><td><code>README.md</code> / <code>.gitignore</code></td><td>削除したディレクトリの sandbox 用ファイルへの記述を除去</td></tr>
         <tr><td><code>src/app/components/home/index.tsx</code></td><td>サンプル3カードと2ダイアログ、対応する Hook・state・ハンドラー・未使用 import を削除。ヘッダーのみ残す</td></tr>
       </table>
 
@@ -131,7 +129,6 @@
         <tr><td><code>src/app/enums/env-variable-*.ts</code> ほか環境変数一式</td><td>環境バッジの表示で継続して使う</td></tr>
         <tr><td><code>src/app/providers/amplify-provider.tsx</code></td><td>Amplify の初期化と認証は task-02 で利用する</td></tr>
         <tr><td><code>src/lib/shadcn/ui/</code></td><td>UI コンポーネントは task-02 で利用する</td></tr>
-        <tr><td><code>scripts/prepare-sandbox.cjs</code></td><td><code>postinstall</code> で環境変数ファイルを生成する</td></tr>
       </table>
     </section>
 
@@ -140,7 +137,7 @@
       <p>GraphQL スキーマから次のモデル・操作が消える。追加は行わない。</p>
       <table>
         <tr><th>種別</th><th>名前</th><th>操作</th></tr>
-        <tr><td>モデル</td><td><code>Todo</code></td><td>削除</td></tr>
+        <tr><td>モデル</td><td><code>Todo</code></td><td>残す（task-02 フェーズA で削除）</td></tr>
         <tr><td>モデル</td><td><code>DailyAccessSummary</code></td><td>削除</td></tr>
         <tr><td>クエリ</td><td><code>cklSayHello</code></td><td>削除</td></tr>
         <tr><td>クエリ</td><td><code>cklAggregateAccess</code></td><td>削除</td></tr>
@@ -150,10 +147,10 @@
     <section>
       <h2>影響範囲</h2>
       <ul class="impact">
-        <li><strong>変わる:</strong> ホーム画面の本体（3カードが消え、ヘッダーのみ）、GraphQL スキーマ（モデル0件）、デプロイ資材（Lambda 2件が消える）</li>
+        <li><strong>変わる:</strong> ホーム画面の本体（3カードが消え、ヘッダーのみ）、GraphQL スキーマ（<code>Todo</code> のみ）、デプロイ資材（Lambda 2件が消える）、<code>scripts/prepare-sandbox.cjs</code>（削除したディレクトリへの生成対象を除去）</li>
         <li><strong>変わらない:</strong> 認証設定、環境変数の仕組み、パスワードポリシー、タグ付与、shadcn/ui、ルーティング構成</li>
         <li><strong>一時的に壊れるもの:</strong> なし。削除する側と参照する側を同じタスクで消すため、完了時点で lint・型検査・ビルドはすべて通る</li>
-        <li><strong>後続への引き渡し:</strong> ヘッダーの実装は task-02 フェーズB で認証済みレイアウトに転用する。モデル0件の状態はフェーズA で解消する</li>
+        <li><strong>後続への引き渡し:</strong> ヘッダーの実装は task-02 フェーズB で認証済みレイアウトに転用する。<code>Todo</code> のモデル定義はフェーズA で4モデルと入れ替える</li>
       </ul>
       <p class="note">
         デプロイは task-02 のモデル追加とまとめて行う（requirements.html の制約事項）。

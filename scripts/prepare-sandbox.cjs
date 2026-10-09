@@ -15,7 +15,6 @@ const projectRoot = path.resolve(__dirname, "..");
 
 const targets = [
   "src/app/enums/env-variable-sandbox",
-  "amplify/functions/common/enums/env-variable-sandbox",
   "amplify/common/enums/env-variable-sandbox",
 ];
 
