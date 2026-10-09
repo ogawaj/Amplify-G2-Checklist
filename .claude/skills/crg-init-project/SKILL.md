@@ -29,7 +29,10 @@ effort: max
 ```bash
 rm -rf .git
 git init
+git add -A && git commit -m "chore: テンプレートから初期化"
 ```
+
+※ この初期コミットが無いと全ファイルが untracked のままとなり、Step 5 の `git mv` が「not under version control」で失敗する。
 
 ### Step 2: 不要ファイルの削除
 

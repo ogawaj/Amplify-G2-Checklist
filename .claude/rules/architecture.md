@@ -18,7 +18,7 @@ paths:
 4. **関心の分離（Separation of Concerns）** — 1 ファイル 1 責務、1 メソッド 1 責務。異なる関心事を混在させない
 5. **高凝集・低結合（High Cohesion, Low Coupling）** — モジュールの入出力は汎用的に設計し、他モジュールへの依存を最小限にする
 6. **驚き最小の原則（Principle of Least Astonishment）** — 関数名・変数名から予測できる振る舞いにする。暗黙の副作用を持たせない
-7. **レイヤードアーキテクチャ（Layered Architecture）** — 上記のレイヤー構成を守り、各レイヤーの責務を超えた処理を書かない
+7. **レイヤードアーキテクチャ（Layered Architecture）** — 後述のレイヤー構成を守り、各レイヤーの責務を超えた処理を書かない
 8. **型安全（Type Safety）** — any や型アサーション（as）で型チェックを迂回しない。コンパイラに誤りを検出させる
 
 ## プロジェクト構成
@@ -107,12 +107,22 @@ scripts/                    - ローカル開発ツール（npm scripts から�
 | ----------------------------- | --------------------------------------------------------------------------- |
 | `shared/`                     | フロントエンド・バックエンド両方から参照。上位レイヤーへの依存禁止          |
 | `src/app/*/`                  | フロントエンド専用。shared/ への依存は OK                                   |
-| `amplify/common/*/`           | CDK 層（backend.ts）共有。shared/ への依存は OK                             |
+| `amplify/common/*/`           | CDK 層（backend.ts）共有。**shared/ への依存は禁止**（下記 §例外 参照）     |
 | `amplify/functions/common/*/` | バックエンド共有。shared/ への依存は OK                                     |
 | `amplify/functions/*/`        | 特定 Lambda 専用。common/ や shared/ への依存は OK                          |
 | `scripts/*/`                  | ローカル開発ツール専用。amplify/ や src/ には依存しない（独立した型・定数） |
 
 **判断基準:** 「どこから参照されるか」ではなく「**上位レイヤーに依存しないか**」が shared / common の条件。
+
+**定数・ヘルパーは実際に参照するレイヤーに配置する** — 例えば Service のみが参照する定数（表示用フォールバックキー等）を Repository に置かない（Repository はデータアクセスが責務）。
+
+### 例外: CDK 層から `@/shared/` を import しない
+
+**CDK 評価時に実行されるファイル**（`amplify/backend.ts` / `amplify/data/resource.ts` / `amplify/common/**`）から `@/shared/...` を import してはいけない。これらは `ampx` の CDK 評価時に tsx で実行され、`@/* → ../*` の paths マッピングがランタイムで効かないため、**tsc / lint は通るが sandbox / デプロイ時に `does not provide an export named '...'` の SyntaxError** で失敗する（Lambda handler は esbuild バンドルなので shared/ import 可）。
+
+- フロント・バック両方から参照される enum でも、CDK 層が使うものは `amplify/common/enums/` に置く（例: `api-operation.ts`。フロントは `@/amplify/common/enums/api-operation` で参照する）
+- backend.ts で enum 値が必要な場合は **静的リテラルで列挙** するか `amplify/common/enums/` に置く
+- CDK 層へ依存を追加したら必ず sandbox 起動で動作確認する
 
 ## Lambda 関数
 
@@ -145,9 +155,18 @@ scripts/                    - ローカル開発ツール（npm scripts から�
 - **個別の DB 接続情報など環境ごとに変わる値は `addEnvironment` で個別注入しない** — Lambda バンドルに含まれる `amplify/functions/common/enums/env-variable-*.ts` を `getEnvVariable()` で読む方式に統一する。`addEnvironment` で必要なのは「どの env ファイルを読むか」を決める `ENV` のみ
 - **`AWS_REGION` は Lambda ランタイムが自動設定する予約環境変数なので注入不要**
 
+## 性能・バッチ処理
+
+- **N+1 を避ける**: ループ内で Repository / 外部 API を 1 件ずつ呼ばない。バッチ前段で対象をまとめて取得し、Map 化して参照する
+- **行単位の独立性と全体停止を使い分ける**: 行ごとに独立して処理すべきバッチ（CSV 取込・同期等）は 1 行の例外で全体を止めず、行の失敗として記録して続行する。逆に DB 接続断など全体に及ぶ例外は行単位で握りつぶさず throw する
+- **AppSync 経由の同期 operation は 30 秒制限を前提に設計する**（引き上げ不可）: 件数に比例する処理は分割送信、または時間予算による打ち切りと継続（処理済み件数を返し、呼出側が未処理分を再送）で収める。継続処理の進行条件は無限ループの余地がない形にする（処理済み 0 件はエラーにする）
+- **同一呼び出し内で同じ取得を重複させない**: 外部 API の Call Limits・DB 読み取りを浪費する。1 度取得した値（トークン・レート等）は引き回す
+- **独立した取得は `Promise.all` で並列化し、順序依存のある処理は並列化しない**（既定リソースの作成 → 後続が利用、等）
+- **Lambda のタイムアウト（`resource.ts`）は処理の想定所要時間と整合させる**
+
 ## バックエンド実装の選択肢
 
-データストア・ORM・リゾルバーパターン等の選択はプロジェクトごとに異なる。プロジェクト固有のバックエンド実装規約は別途ルールファイルで定義する。本プロジェクトの DB / ORM 固有規約は `architecture-db.md` を参照。
+データストア・ORM・リゾルバーパターン等の選択はプロジェクトごとに異なる。本プロジェクトのデータストアは DynamoDB（Amplify Data）で、モデル定義は `amplify/data/resource.ts` に集約し、DynamoDB へのアクセスは Repository 層に閉じる。DB 固有のアーキテクチャ規約は `architecture-db.md`、コーディング規約は `coding-standards-db.md` を参照。
 
 ## Next.js ルーティング
 

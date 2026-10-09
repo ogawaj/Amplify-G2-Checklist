@@ -49,7 +49,7 @@ effort: max
 - `architecture.md` — アーキテクチャ・レイヤー構成・配置ルール（汎用）
 - `architecture-db.md` — DB 固有のアーキテクチャ規約（Amplify Data + DynamoDB）
 - `coding-standards.md` — 命名規則・データモデル・ドメイン定数・文言・YAGNI 等（汎用）
-- `coding-standards-db.md` — DB 固有のコーディング規約（Amplify Data + DynamoDB）
+- `coding-standards-db.md` — DB 固有のコーディング規約（型付きクライアント優先・エラーの扱い・クエリの効率）
 - `api-design.md` — GraphQL / REST API 設計
 - `document.md` — ドキュメント整備ルール
 

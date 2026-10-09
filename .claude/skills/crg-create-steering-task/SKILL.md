@@ -53,72 +53,7 @@ mkdir -p doc/steering/[ステアリングディレクトリ]/[task-NN-title]
 
 作成時は plan.md の該当タスクの概要・依存関係を踏まえて記述する。
 
-**形式:** 各ファイルは有効な HTML ドキュメントとして作成する。以下の雛形を使用する：
-
-```html
-<!DOCTYPE html>
-<html lang="ja">
-  <head>
-    <meta charset="UTF-8" />
-    <title>[ファイル名] — [タスク名]</title>
-    <style>
-      :root {
-        color-scheme: light;
-      }
-      html,
-      body {
-        background: #ffffff;
-        color: #222222;
-      }
-      body {
-        font-family: sans-serif;
-        max-width: 900px;
-        margin: 2rem auto;
-        padding: 0 1.5rem;
-        line-height: 1.6;
-      }
-      h1,
-      h2,
-      h3 {
-        border-bottom: 1px solid #e0e0e0;
-        padding-bottom: 0.25em;
-      }
-      a {
-        color: #0366d6;
-      }
-      code {
-        background: #f5f5f5;
-        color: #222222;
-        padding: 0.1em 0.3em;
-        border-radius: 3px;
-      }
-      pre {
-        background: #f5f5f5;
-        color: #222222;
-        padding: 1em;
-        border-radius: 4px;
-        overflow-x: auto;
-      }
-      table {
-        border-collapse: collapse;
-        width: 100%;
-      }
-      th,
-      td {
-        border: 1px solid #ddd;
-        padding: 0.5em 0.75em;
-        text-align: left;
-      }
-      th {
-        background: #f5f5f5;
-      }
-    </style>
-  </head>
-  <body>
-    <!-- コンテンツ -->
-  </body>
-</html>
-```
+**形式:** 各ファイルは有効な HTML ドキュメントとして作成する。CSS テンプレート・セクション構成は **`crg-html-design-doc` スキル（`.claude/skills/crg-html-design-doc/SKILL.md`）が一次資料**。作成前に同スキルを読み込み、その雛形・クラス早見表に従うこと（本スキルには雛形を重複記載しない）。
 
 #### Step 2-1: requirements.html（今回のタスクの要求内容）
 

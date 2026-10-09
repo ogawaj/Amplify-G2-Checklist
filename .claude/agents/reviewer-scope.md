@@ -81,6 +81,7 @@ model: sonnet
 ## ルール
 
 - 観点詳細は `.claude/rules/coding-standards.md` §YAGNI / §依存パッケージの管理 を一次資料とする（本ファイルには参照のみ記述）
+- **CDK 層（`amplify/backend.ts` / `amplify/data/resource.ts` / `amplify/common/**`）から参照されるファイルの shared/ への移動を提案しない** — フロント・バック両方から参照されていても、CDK 評価時の tsx 実行では `@/shared/...` の paths がランタイムで効かず、移動すると sandbox デプロイが CDK Assembly Error で失敗する（`architecture.md`§例外: CDK 層から`@/shared/` を import しない を参照）
 - knip の生出力は detection-result に整形済み。生出力をそのまま結果に貼り付けない
 - 誤検知の可能性がある項目を機械的に削除推奨しない。Next.js の page / layout / route / generateMetadata、Amplify の handler / resource、テストランナーが動的にロードするファイル等は実コードを確認してから判定する
 - 誤検知判定時は必ず knip.json への追加パターン（entry / ignore / ignoreDependencies のいずれか）を明示する

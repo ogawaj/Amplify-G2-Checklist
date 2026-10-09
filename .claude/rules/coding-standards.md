@@ -101,12 +101,25 @@ Service / Repository のファイル名・関数名は **ドメイン（リソ�
 
 判断基準: 「**画面を作り直しても、この Service / Repository は同じ名前で使い続けられるか**」を問う。
 
-**引数名も同様に呼出元コンテキストに依存させない** — Repository / Service の引数名は呼び出し元のローカル変数名（`fetchedIds` 等）に引っ張られず、「保持する ID 集合」など Repository としての汎用的な意味で命名する（例: `deleteEbayCategoriesNotIn(prisma, fetchedIds)` ✗ → `deleteEbayCategoriesNotIn(prisma, categoryIds)` ○）。
+**関数の配置先もドメイン軸で判断する** — 単一ドメインのデータしか参照しない関数は、機能軸のファイル（`sales-report-repository` のようなレポート・画面機能単位のファイル）ではなく、そのドメインの Repository / Service に置く。機能軸のファイルを設けるのは複数ドメインにまたがる処理（横断集計等）に限る。ただし、特定ユースケース固有のクエリ群で汎用 CRUD の Repository が肥大化する場合は、**「主ドメイン + 関心事」のファイル**（`<domain>-<concern>-repository.ts`。例: 集計用の `todo-summary-repository.ts`）へ分割してよい。
+
+#### 汎用機構の名前に初出ドメインを含めない
+
+複数ドメインで共有しうる共通機構（ワーカーの入出力契約・ループ制御・バッチ骨格等）の型名・ファイル名は、**最初に利用したドメイン名ではなく契約の内容**で命名する（✗ `OrderSyncLoopInput`（初出ドメイン名）○ `LoopingSyncWorkerInput`（契約の内容））。JSDoc の説明文も特定ドメインの用語で書かず、契約として汎用に記述する。
+
+**引数名も同様に呼出元コンテキストに依存させない** — Repository / Service の引数名は呼び出し元のローカル変数名（`fetchedIds` 等）に引っ張られず、「保持する ID 集合」など Repository としての汎用的な意味で命名する（例: `deleteCategoriesNotIn(fetchedIds)` ✗ → `deleteCategoriesNotIn(categoryIds)` ○）。
+
+**変数名も外部レスポンスの構造上の名前に依存させない** — 外部 API の配列キー等（`members` / `items` / `entries` / `data`）は生レスポンス型（`*RawResponse`）のフィールドに留め、Repository の戻り値を受ける変数以降はドメインの名前にする（✗ `const members = await listReturns()` ○ `const returns = await listReturns()`。型は生レスポンス型のままでよい）。
+
+### 単位・通貨・TZ をフィールド名のサフィックスで明示する
+
+金額・日時など「値の解釈規約」を持つフィールドは、サフィックスで単位を自明にする（例: `shippingCostJpy` / `priceUsd`）。**システム内 UTC 保持の例外として JST 値を運ぶフィールドも同様に `Jst` サフィックスを付ける**（例: `dateFromJst` / `dateToJst`）。型（string）や JSDoc だけでは規約の例外が利用側から見えないため、無印名（`dateFrom` 等）で JST 値を運ばない。
 
 ## エクスポート
 
 - **名前付きエクスポートのみ**使用する。default export は使わない（Next.js の page.tsx / layout.tsx を除く）
 - barrel ファイル（`index.ts`）は使わない。直接パスで import する
+- **同一ファイル内からのみ参照される宣言は export しない**（情報隠蔽）。外部ファイルから参照が生じた時点で export に昇格する。クエリ条件の定数・中間型（ネスト構造の内側の型等）が典型例
 
 ## データモデル
 
@@ -217,9 +230,35 @@ export type TodoPriority = (typeof TODO_PRIORITY)[keyof typeof TODO_PRIORITY];
 - 日本語でコメントを記述する
 - `@param`, `@returns` タグを使用する
 - **書くべきもの**: 関数の目的（一行サマリ） / `@param` / `@returns` / `@throws` / 副作用や重要な制約
-- **書かないもの**: 処理フロー（`1. ... 2. ...` の手順） / 実装詳細（「平文 TEXT で保存」等） / 他関数への遷移説明 / well-named な識別子で自明な内容
+  - 集約・優先順位などの非自明な規則を持つ関数は、規則を「どの入力にどの出力を返すか」の形で書き、入力と出力の具体例を `@example` に 1 つ書く。文章・表・例で同じ規則を重ねて書かない。コメントの主張は無条件に成り立つ文だけにする（条件付きでしか正しくない言い換えを書かない）
+- **書かないもの**: 処理フロー（`1. ... 2. ...` の手順） / 実装詳細（「平文 TEXT で保存」等） / 他関数への遷移説明 / well-named な識別子で自明な内容 / 呼び出し元の事情（次項）
   - 理由: コードを読めば分かる情報はリファクタで陳腐化し、JSDoc とコードの乖離を生む
-  - 例外: 外部仕様（プロトコル / 規格）への準拠や非自明な設計判断は書く価値がある
+  - 例外: 外部仕様（プロトコル / 規格）への準拠や非自明な設計判断は書く価値がある。業務判断を表す定数（閾値・時間予算・分割数等）は根拠（なぜその値か）を JSDoc に書く
+
+### JSDoc は「契約」を書き、「呼び出し元の事情」を書かない
+
+JSDoc はその関数・型が **利用側に約束する契約**（何をするか / 引数と戻り値の意味 / 事前条件 / 事後条件・副作用 / 例外）だけを説明する。**誰から・どの流れで呼ばれるか** は書かない（Clean Code の「Nonlocal Information」、A Philosophy of Software Design の interface comment の原則）。
+
+✗ 悪い例:
+
+```typescript
+/** 複数行の商品価格を外部サービスへ反映する（CSV 取込の後段で使用） */
+/** @param adRatePatch - 広告費率パッチ（1 件確定・CSV 取込の双方から渡される） */
+/** 変更分を返す（フロントが REVISE_XXX で反映後に保存する） */
+```
+
+○ 良い例:
+
+```typescript
+/** 複数行の商品価格を外部サービスへ反映する。行ごとに独立して処理し、1 行の失敗は他の行に影響しない */
+/** @param adRatePatch - 広告費率の確定結果（{@link reviseListingAdRate} の戻り値）。undefined なら広告費率は更新しない */
+/** 現在値と異なる項目のみを返す（DB には保存しない） */
+```
+
+- 理由: 呼び出し元の情報はその関数の外にあり、呼び出し元が増減・変更されてもこの JSDoc は更新されず嘘になる。下位レイヤー（Repository 等）が上位（Service 等）の都合を説明すると、ドキュメント上で上向きの依存が生まれ、関数の汎用性が説明文で損なわれる（情報隠蔽）
+- **利用側が守るべき前提は「呼び出し元の事情」ではなく「契約」なので書く**: 「トランザクション内で呼ぶこと」「事前に X を呼んで取得した値を渡すこと」「順序依存があり並列に呼ばないこと」「戻り値の index は入力配列の index に対応する」等
+- **使い方を示したいときは `@example`**（呼び出し元の固有名ではなく自己完結した例）、**関連する関数を示したいときは `@see` / `{@link}`** を使う
+- 複数の経路にまたがる処理の流れ（「取込 → 反映 → 保存」等）は関数の JSDoc ではなく設計ドキュメント（ステアリングの design.html / 永続の functional-design.md）に書く
 
 ## 文言の言語
 
@@ -263,6 +302,29 @@ export const createTodo = async (content: string | null) => {
 };
 ```
 
+### 引数の型は関数が参照する項目に絞る
+
+関数が引数オブジェクトの一部の項目しか参照しない場合は、引数の型を `Pick<...>` 等でその項目に絞る。広い型（upsert 入力全体など）を受け取ると、比較・判定の対象範囲が宣言から読めず、呼出側が型に含まれる別の項目を使い始めたときに判定漏れが起きても型エラーにならない（架構原則 #6 驚き最小の原則）。
+
+```typescript
+// ✗ upsert 入力全体を受け取るが、比べるのは実績の項目だけ（見積を書き始めると黙って取りこぼす）
+const isWriteUnchanged = (input: ShipmentUpsertInput, existing: Shipment) => ...
+// ○ 比べる項目だけを型に出す
+const isWriteUnchanged = (
+  input: Pick<ShipmentUpsertInput, "actualShippingJpy" | "actualShippingSource">,
+  existing: Shipment,
+) => ...
+```
+
+### 業務パラメータを Repository にハードコードしない
+
+取得件数（Top5 の「5」等）・閾値・対象集合（処理対象サイトの一覧等）のような **業務上のパラメータは Repository 関数にハードコードせず、引数で受け取る**。値をいくつにするか・どの集合を対象にするかは呼出側の Service が決める（Repository はデータアクセスの汎用性を保つ）。業務判断を表す定数も Repository ではなく、その判断を担う Service 側に定義する。
+
+```typescript
+// ✗ listProfitTop5 = (userId) => ...（件数 5 が関数名と実装に固定）
+// ○ listProfitTopN = (userId, limit: number) => ...（件数は呼出側 Service が渡す）
+```
+
 ### 単一取得関数の未取得時の戻り値
 
 `get*` / `find*` 系の **単一取得関数** は、対象レコードが存在しない場合に以下のいずれかで返す:
@@ -302,6 +364,14 @@ export const getUserSetting = async (
 
 フロント側で「未設定状態の初期値」が必要な場合は、Hook / Component 層で `?? DEFAULT_VALUES` のように吸収する（境界の責務分離）。
 
+### 部分更新の patch 構築は `!== undefined` 判定で統一する
+
+部分更新（patch）オブジェクトへフィールドをコピーする条件は `input.field !== undefined` で判定する。`Object.prototype.hasOwnProperty.call(...)` による「キー存在」判定は「キー無し / `null` / `undefined` 明示」の 3 状態を区別する定石だが、`undefined` を明示送信するユースケースが無い API では過剰（KISS）。`null` 明示はコピーされ「未設定へのリセット」として機能する。
+
+### 契約上あり得ないケースに見せかけの既定値で蓋をしない
+
+配列の再マップ・逆引きなどで「契約上は必ず見つかる」値が見つからない場合、`?? 0` / `?? ""` のような既定値で処理を続けず、データ整合性エラーとして throw する。見せかけの値で続行すると、不整合が別の箇所の誤った結果として現れ原因を追えなくなる（架構原則 #6 驚き最小の原則）。
+
 ## React Hook の書き方
 
 ```typescript
@@ -324,10 +394,19 @@ export const useTodos = () => {
 - Hook 名は `use<Feature>` または `use<Action><Feature>`
 - 状態と操作関数をオブジェクトで返す
 
+## React Component の書き方
+
+- **`useEffect` の依存配列を正しく保つ**: 不足（stale な値の参照）・過剰（毎回実行）・オブジェクトリテラル依存（毎レンダー再実行）を避ける
+- **メモ化は再レンダリング抑止に効く場合のみ**: `useMemo` / `useCallback` はメモ化された子に渡す値・コールバックに使う。効果のないメモ化は可読性を下げるだけなので書かない
+- **並び替え・削除のあるリストの `key` に index を使わない**
+- **非同期処理中はローディング表示と連打防止**: 処理中フラグでボタンを disabled にし、失敗はユーザーに見える形で伝える
+
 ## YAGNI / デッドコード禁止
 
 - **本タスク内に利用箇所が無いコードを実装しない**（架構原則 #3 YAGNI の具体化）
-- **「将来必要」だけを根拠に先行実装しない** — ステアリングドキュメント（requirements.md / design.md）で「task-XX で利用予定」と記載されていても、本タスクで利用箇所が無ければ実装しない。利用するタスクで実装する
+- **「将来必要」だけを根拠に先行実装しない** — ステアリングドキュメント（requirements.html / design.html）で「task-XX で利用予定」と記載されていても、本タスクで利用箇所が無ければ実装しない。利用するタスクで実装する
+- **別タスク用の変更を本タスクに混ぜない（scope creep 禁止）** — OAuth scope 追加・設定値変更など「後続タスクで使う」変更は、利用するタスクの PR で行う
+- **`as const` 定数のユニオン型導出も参照が生じてから書く** — `export type Xxx = (typeof XXX)[keyof typeof XXX]` の型導出行は、型として参照する箇所が無ければ追加しない（値側のみ利用の enum に型導出を機械的に付けない）
 - **デッドコードを残さない** — 機能削除・設計変更で使われなくなった関数 / 型 / ファイル / import は同じ PR 内で削除する。コメントアウトで残さない（履歴は git で追える）
 - **関数の戻り値型は実際に return する値の union のみ書く** — ライブラリ側の prop 型をそのままコピーしない。型に「将来返すかも」の値を含めない
   - ✗ 悪い例: 関数が `"default" | "secondary" | "destructive"` しか返さないのに、`Badge` の variant prop 型 `"default" | "secondary" | "destructive" | "outline"` をそのまま戻り値型にする
@@ -345,15 +424,20 @@ export const useTodos = () => {
 - **同一責務のロジックが 2 箇所以上に登場した時点で関数化** し、適切なレイヤー（`services/` / `utils/`）に置く
 - 配置先判断: フロント・バック共有なら `shared/utils/` または `shared/services/`、Lambda 内のみなら `amplify/functions/common/services/`
 - 「将来 3 箇所目が来るかも」だけを根拠に **先行抽出しない**（YAGNI）
+- **配列の汎用処理（groupBy / keyBy / chunk / uniq / sumBy 等）は `shared/utils/array-utils.ts` の自前ユーティリティを使い、lodash は使わない**（lodash は `isEqual` のみ）。無い関数はそこに足す（ファイルが無ければ作成する。まとめる系は `Map` を返す）
 
 例: 2 つの Lambda Handler に同じ「AppSync identity から sub を取り出す」ロジックが現れた時点で、共通 Service（`amplify/functions/common/services/auth-context-service.ts` 等）に `getUserIdFromIdentity` として集約する
 
 ### インライン化（1 箇所利用の private 関数）
 
 - private 関数（非 export）が **1 箇所からのみ呼ばれる** + **抽象化に意図的な命名価値が薄い** + **5〜10 行程度** なら **インライン化** を優先する
-- 「関数化することで意図が明確になる」場合は維持してよい（例: OAuth プロトコル固有の `exchangeCodeForToken` は維持、URL 文字列組立の `buildAuthorizationUrl` は削除）
+- 「関数化することで意図が明確になる」場合は維持してよい（例: OAuth プロトコル固有の `exchangeCodeForToken` は維持、集約・優先順位などの非自明な規則を持つループは抽出して規則を JSDoc に書く、URL 文字列組立の `buildAuthorizationUrl` は削除）。抽出する際、次の工程のためだけに存在する変換（集約結果の再グルーピング等）は同じ関数に含め、中間構造を呼出側に見せない
 
 判断基準: 関数名を見ずにインライン展開した方が読みやすい / コードが短くなるなら、抽出する価値が無い。
+
+### 2 つの定義の整合は「型で守る」より「定義元を 1 つに減らす」
+
+対応表と対象一覧のように **乖離しうる 2 つの定義** がある場合、整合を検証するための型・チェックを追加するのではなく、**片方を Single Source of Truth とし、他方を `Object.keys(...)` 等で導出する**。定義元が 1 つになれば乖離は構造的に起こりえず、整合を守るための型自体が不要になる。
 
 ## 外部 API 連携の型分離
 
@@ -372,6 +456,22 @@ export const useTodos = () => {
 ## UI 表示用語の統一
 
 ユーザーの目に触れる文字列は表記揺れを起こさないようにすること。
+
+## 型チェックの検証スコープ
+
+root の `tsconfig.json` は `amplify` を `exclude` しているため、**`npx tsc --noEmit` だけでは amplify/ 配下（Handler / Service / Repository）は型チェックされない**（vitest も esbuild 変換のため型エラーを拾わない）。変更完了の報告前に、変更範囲に応じて以下の両方を実行する：
+
+```bash
+npx tsc --noEmit                            # src/ + shared/ + scripts/
+npx tsc --noEmit -p amplify/tsconfig.json   # amplify/ 配下
+```
+
+## 識別子リネーム時の注意（フォーマッタによる import 削除）
+
+本リポジトリは PostToolUse フックで prettier / eslint（unused-imports 相当）が **ファイル保存ごとに** 走る。リネーム中に「import 名は新名・使用箇所は旧名」の瞬間があると、新名の import が「未使用」と判定され **import 行ごと削除される**（結果 `Cannot find name 'X'` で tsc が落ちる）。
+
+- リネームは **使用箇所を先に、import を後に** 変更する。または同一の置換内に import と使用箇所を含めて原子的に変更する
+- リネーム後は §型チェックの検証スコープ の両 tsc で検証し、消えた import があれば復元する
 
 ## 依存パッケージの管理
 

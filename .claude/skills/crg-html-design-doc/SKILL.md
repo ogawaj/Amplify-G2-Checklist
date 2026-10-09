@@ -1,5 +1,5 @@
 ---
-name: html-design-doc
+name: crg-html-design-doc
 description: >
   プロジェクトドキュメントをフォーマットに沿って生成するスキル。対象は以下の全種別：
   【HTML】requirements.html / design.html / tasklist.html（ステアリングタスク）

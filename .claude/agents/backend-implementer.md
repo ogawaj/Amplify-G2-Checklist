@@ -20,7 +20,7 @@ model: sonnet
 - `amplify/functions/common/models/` — Lambda 共有データモデル
 - `amplify/functions/common/enums/` — Lambda 共有ドメイン定数
 - `amplify/functions/common/utils/` — Lambda 共有ユーティリティ
-- `shared/` — フロントエンド・バックエンド共有コード
+- `shared/` — フロントエンド・バックエンド共有コード（編集担当は本エージェントのみ。フロント系エージェントは参照のみ）
 
 ## 担当外（触らないこと）
 
@@ -28,14 +28,15 @@ model: sonnet
 
 ## 手順
 
-1. 指定されたステアリングディレクトリの requirements.md, design.md, tasklist.md を読み込んでください。
+1. 指定されたステアリングディレクトリの requirements.html, design.html, tasklist.html を読み込んでください。
 
-2. tasklist.md の中から、自分の担当範囲に該当するタスクを上から順に実装してください。
+2. tasklist.html の中から、自分の担当範囲に該当するタスクを上から順に実装してください。
 
-3. 各タスク完了時に tasklist.md のチェックボックスを `- [ ]` から `- [x]` に更新してください。
+3. 各タスク完了時に tasklist.html のチェックボックスを未完了から完了に更新してください。
 
 4. 全タスク完了後、以下を実行してエラーがないことを確認してください：
-   - `npx tsc --noEmit`（TypeScript コンパイルチェック）
+   - `npx tsc --noEmit`（src/・shared/ の TypeScript コンパイルチェック）
+   - `npx tsc --noEmit -p amplify/tsconfig.json`（amplify/ 配下のコンパイルチェック。root の tsc は amplify/ を検証しない）
    - `npm run lint`（ESLint チェック）
 
 5. エラーがあれば修正してください。

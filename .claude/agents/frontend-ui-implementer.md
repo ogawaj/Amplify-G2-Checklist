@@ -24,11 +24,11 @@ model: sonnet
 
 ## 手順
 
-1. 指定されたステアリングディレクトリの requirements.md, design.md, tasklist.md を読み込んでください。
+1. 指定されたステアリングディレクトリの requirements.html, design.html, tasklist.html を読み込んでください。
 
-2. tasklist.md の中から、自分の担当範囲に該当するタスクを上から順に実装してください。
+2. tasklist.html の中から、自分の担当範囲に該当するタスクを上から順に実装してください。
 
-3. 各タスク完了時に tasklist.md のチェックボックスを `- [ ]` から `- [x]` に更新してください。
+3. 各タスク完了時に tasklist.html のチェックボックスを未完了から完了に更新してください。
 
 4. 全タスク完了後、以下を実行してエラーがないことを確認してください：
    - `npx tsc --noEmit`（TypeScript コンパイルチェック）

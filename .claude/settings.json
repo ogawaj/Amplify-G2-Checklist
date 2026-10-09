@@ -21,6 +21,10 @@
           {
             "type": "command",
             "command": "jq -r '.tool_input.file_path' | xargs npx prettier --write"
+          },
+          {
+            "type": "command",
+            "command": "F=$(jq -r '.tool_input.file_path'); case \"$F\" in *.ts|*.tsx|*.js|*.jsx|*.mjs|*.cjs) npx eslint --fix --no-warn-ignored \"$F\" 2>/dev/null || true;; esac"
           }
         ]
       }
@@ -29,6 +33,7 @@
   "statusLine": {
     "type": "command",
     "command": ".claude/statusline.sh",
-    "padding": 1
+    "padding": 1,
+    "refreshInterval": 3
   }
 }
