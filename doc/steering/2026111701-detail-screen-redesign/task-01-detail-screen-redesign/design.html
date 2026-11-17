@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <title>design.html — task-01: チェックリスト詳細画面の作り直し</title>
+    <style>
+      :root {
+        --primary: #2563eb;
+        --border: #e2e8f0;
+        --text: #1e293b;
+        --muted: #64748b;
+        --code-bg: #f1f5f9;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        max-width: 860px;
+        margin: 2rem auto;
+        padding: 0 1.5rem 3rem;
+        line-height: 1.7;
+        color: var(--text);
+        background: #fff;
+      }
+      .page-header {
+        background: linear-gradient(135deg, #1e3a5f 0%, var(--primary) 100%);
+        color: #fff;
+        padding: 1.5rem 2rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+      }
+      .page-header .badge {
+        display: inline-block;
+        background: rgba(255, 255, 255, 0.2);
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 0.2em 0.7em;
+        border-radius: 999px;
+        margin-bottom: 0.6rem;
+      }
+      .page-header h1 {
+        margin: 0;
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: #fff;
+      }
+      section {
+        margin-bottom: 1.5rem;
+        padding: 1.25rem 1.5rem;
+        border: 1px solid var(--border);
+        border-left: 4px solid var(--primary);
+        border-radius: 6px;
+        background: #fff;
+      }
+      section h2 {
+        margin: 0 0 0.9rem;
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--primary);
+      }
+      section h3 {
+        margin: 1rem 0 0.4rem;
+        font-size: 0.85rem;
+        font-weight: 700;
+      }
+      section h3:first-of-type {
+        margin-top: 0;
+      }
+      section p {
+        margin: 0 0 0.5rem;
+        font-size: 0.95rem;
+      }
+      code {
+        background: var(--code-bg);
+        color: #c2410c;
+        padding: 0.1em 0.35em;
+        border-radius: 3px;
+        font-size: 0.87em;
+        font-family: "SFMono-Regular", Consolas, monospace;
+      }
+      ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      ul li {
+        position: relative;
+        padding: 0.35em 0 0.35em 1.8em;
+        font-size: 0.95rem;
+        border-bottom: 1px solid #f1f5f9;
+      }
+      ul li:last-child {
+        border-bottom: none;
+      }
+      .approach li::before,
+      .impact li::before {
+        content: "▸";
+        position: absolute;
+        left: 0;
+        top: 0.3em;
+        color: var(--primary);
+        font-size: 0.9em;
+      }
+      section.constraint-section {
+        border-left-color: #f59e0b;
+        background: #fffbeb;
+      }
+      section.constraint-section h2 {
+        color: #92400e;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 0.88rem;
+        margin-top: 0.25rem;
+      }
+      th,
+      td {
+        border: 1px solid var(--border);
+        padding: 0.45em 0.75em;
+        text-align: left;
+      }
+      th {
+        background: #f8fafc;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page-header">
+      <div class="badge">Design</div>
+      <h1>task-01: チェックリスト詳細画面の作り直し</h1>
+    </div>
+
+    <section>
+      <h2>実装アプローチ</h2>
+      <ul class="approach">
+        <li>
+          詳細画面は
+          <code>ListDetailBody</code>
+          がモード（準備／編集）・シート・通知の状態を持ち、準備ビューと編集ビューを切り替える。モードはURLに出さない
+        </li>
+        <li>
+          準備モードは <code>useCheckState</code>、編集モードは
+          <code>useItemEdit</code
+          >（選択・追加・一括操作・並べ替え・削除）、管理シートは
+          <code>useCategory</code> /
+          <code>useTag</code> が担う。通知と［元に戻す］は
+          <code>useUndoToast</code> に集約する
+        </li>
+        <li>
+          削除の取り消しは「同じ内容で作り直す」。持ち物は削除前の項目（チェック状態・タグ・表示順を含む）で再作成する。一括リセットの取り消しは、外す前にチェック済みだった持ち物にだけ付け直す
+        </li>
+        <li>
+          持ち物の表示順は
+          <code>sortOrder</code>
+          昇順、未設定は作成日時順で末尾。並べ替えは隣と値を入れ替える。追加・一括移動・CSV取り込み・並べ替えの前に、カテゴリ内が0からの連番でなければ（未設定・重複・欠番）連番を振り直す
+        </li>
+        <li>
+          配色は
+          <code>globals.css</code>
+          のトークンで定義し、画面部品はトークン経由で参照する（色コードの直書きをしない）
+        </li>
+      </ul>
+    </section>
+
+    <section class="constraint-section">
+      <h2>設計判断</h2>
+      <p>削除の取り消しは「削除の保留」ではなく「作り直し」で実現する（保留方式は通知の表示中に画面を離れると削除が実行されないため）。参照先が消えた場合の扱いは <code>functional-design.md</code> §削除・整合性の扱い に従う。</p>
+      <p>残り件数＝絞り込み後に表示中の持ち物（共通を含む）のうち未チェックの件数。準備完了＝表示中の持ち物がすべてチェック済み（表示されていない未チェックは問わない）。</p>
+    </section>
+
+    <section>
+      <h2>変更ファイル一覧</h2>
+      <table>
+        <tr>
+          <th>パス</th>
+          <th>役割</th>
+          <th>区分</th>
+        </tr>
+        <tr>
+          <td><code>amplify/data/resource.ts</code></td>
+          <td>Item に <code>sortOrder</code>（任意の整数）を追加</td>
+          <td>変更</td>
+        </tr>
+        <tr>
+          <td><code>src/app/utils/sort-utils.ts</code></td>
+          <td>持ち物の表示順の比較関数を追加</td>
+          <td>変更</td>
+        </tr>
+        <tr>
+          <td><code>src/app/services/item-service.ts</code></td>
+          <td>
+            表示順の採番・並べ替え・一括カテゴリ移動・一括タグ付与・解除・作り直しの
+            Service
+          </td>
+          <td>変更</td>
+        </tr>
+        <tr>
+          <td><code>src/app/services/item-filter-service.ts</code></td>
+          <td>カテゴリ内の並びを表示順にする</td>
+          <td>変更</td>
+        </tr>
+        <tr>
+          <td>
+            <code>src/app/services/category-service.ts</code> /
+            <code>tag-service.ts</code>
+          </td>
+          <td>削除したカテゴリ・タグの作り直し</td>
+          <td>変更</td>
+        </tr>
+        <tr>
+          <td>
+            <code>src/app/services/check-list-service.ts</code> /
+            <code>csv-service.ts</code>
+          </td>
+          <td>複製・取り込みで表示順を引き継ぐ／採番する</td>
+          <td>変更</td>
+        </tr>
+        <tr><td><code>src/app/models/undo-toast-content.ts</code></td><td>通知（文言と取り消し処理）の型</td><td>新規</td></tr>
+        <tr><td><code>src/app/models/blocked-deletion.ts</code></td><td>削除できない理由（対象と文言）の型</td><td>新規</td></tr>
+        <tr><td><code>src/app/models/item-tag-label.ts</code></td><td>行に出す行き先の表示の型</td><td>新規</td></tr>
+        <tr><td><code>src/app/models/bulk-result.ts</code> / <code>category-item-group.ts</code></td><td>書き込み結果付きの一括処理結果・表示名付きの進捗の型を追加／並びの説明を変更</td><td>変更</td></tr>
+        <tr><td><code>src/app/models/category-progress-group.ts</code></td><td>カテゴリ内の進捗（表示しなくなった）</td><td>削除</td></tr>
+        <tr><td><code>src/app/services/concurrency-service.ts</code></td><td>並列実行の結果から書き込み結果付きの一括処理結果を作る関数を追加</td><td>変更</td></tr>
+        <tr><td><code>src/app/utils/list-path-utils.ts</code></td><td>削除したパス区間を使っていたJSDocの例を直す</td><td>変更</td></tr>
+        <tr><td><code>src/app/models/item.ts</code></td><td>更新入力の説明（任意項目に null を渡すと未設定に戻す）</td><td>変更</td></tr>
+        <tr><td><code>src/app/hooks/use-check-lists.ts</code>、<code>src/app/components/check-list/{check-list-card,check-list-screen}.tsx</code></td><td>S-04 の用語を「名前」に統一</td><td>変更</td></tr>
+        <tr><td><code>src/app/utils/integer-utils.ts</code></td><td>整数の文字列の判定</td><td>新規</td></tr>
+        <tr><td><code>src/app/utils/item-tag-label-utils.ts</code></td><td>行に出す行き先（「共通」「〜にも」）の組み立て</td><td>新規</td></tr>
+        <tr><td><code>src/app/utils/array-utils.ts</code></td><td>IDで置き換える関数を追加</td><td>変更</td></tr>
+        <tr><td><code>src/app/enums/detail-mode.ts</code> / <code>detail-sheet.ts</code></td><td>詳細画面のモードとシートの種類</td><td>新規</td></tr>
+        <tr><td><code>src/app/hooks/use-bulk-progress.ts</code> / <code>use-detail-feedback.ts</code></td><td>一括処理の進捗／通知・進捗・実行中状態の合成</td><td>新規</td></tr>
+        <tr><td><code>src/app/hooks/use-tag-filter.ts</code> / <code>use-csv.ts</code></td><td>絞り込みの置き換え／取り込みに既存の持ち物を渡す</td><td>変更</td></tr>
+        <tr><td><code>src/app/components/common/{action-button,add-field,blocked-reason,icon-button,menu-row,text-button}.tsx</code></td><td>詳細画面で使う小さな部品</td><td>新規</td></tr>
+        <tr><td><code>src/app/(auth-page)/layout.tsx</code></td><td>背景を白にする（配色トークンの変更に合わせる）</td><td>変更</td></tr>
+        <tr>
+          <td><code>src/app/hooks/use-undo-toast.ts</code></td>
+          <td>通知の表示・取り消し付き通知の保護</td>
+          <td>新規</td>
+        </tr>
+        <tr>
+          <td><code>src/app/hooks/use-check-state.ts</code></td>
+          <td>準備モードの状態（残り件数・取り消し付きリセット）</td>
+          <td>変更</td>
+        </tr>
+        <tr>
+          <td><code>src/app/hooks/use-item-edit.ts</code></td>
+          <td>編集モードの状態（選択・追加・一括操作・並べ替え・削除）</td>
+          <td>変更</td>
+        </tr>
+        <tr>
+          <td>
+            <code>src/app/hooks/use-category.ts</code> / <code>use-tag.ts</code>
+          </td>
+          <td>管理シートの状態（取り消し付き削除）</td>
+          <td>変更</td>
+        </tr>
+        <tr>
+          <td><code>src/app/components/common/bottom-sheet.tsx</code></td>
+          <td>下から出るシート</td>
+          <td>新規</td>
+        </tr>
+        <tr>
+          <td><code>src/app/components/common/undo-toast.tsx</code></td>
+          <td>画面下部の通知（［元に戻す］付き）</td>
+          <td>新規</td>
+        </tr>
+        <tr>
+          <td><code>src/app/components/common/chip.tsx</code></td>
+          <td>選択式のチップ</td>
+          <td>新規</td>
+        </tr>
+        <tr>
+          <td><code>src/app/components/common/inline-text.tsx</code></td>
+          <td>Enter後もフォーカスを残す追加欄の指定を追加</td>
+          <td>変更</td>
+        </tr>
+        <tr>
+          <td><code>src/app/components/list-detail/*.tsx</code></td>
+          <td>本体・準備ビュー・編集ビュー・各行・各シート・下部バー</td>
+          <td>変更・新規</td>
+        </tr>
+        <tr>
+          <td><code>src/app/globals.css</code></td>
+          <td>メモアプリ風の配色トークン</td>
+          <td>変更</td>
+        </tr>
+        <tr>
+          <td><code>src/app/enums/app-path.ts</code></td>
+          <td>S-06〜S-08 のパス区間を削除</td>
+          <td>変更</td>
+        </tr>
+        <tr>
+          <td>
+            <code
+              >src/app/(auth-page)/lists/[listId]/{items,categories,tags}/</code
+            >
+          </td>
+          <td>S-06〜S-08 のページ</td>
+          <td>削除</td>
+        </tr>
+        <tr>
+          <td>
+            <code>src/app/components/{item,category,tag}/</code>、<code
+              >common/{tag-filter,notice-dialog}.tsx</code
+            >
+          </td>
+          <td>S-06〜S-08 の画面部品</td>
+          <td>削除</td>
+        </tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>データ構造の変更</h2>
+      <table>
+        <tr>
+          <th>モデル</th>
+          <th>フィールド</th>
+          <th>型</th>
+          <th>必須</th>
+          <th>備考</th>
+        </tr>
+        <tr>
+          <td>Item</td>
+          <td>sortOrder</td>
+          <td>Integer</td>
+          <td>―</td>
+          <td>カテゴリ内の表示順。既存データは未設定のまま</td>
+        </tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>配色トークン</h2>
+      <table>
+        <tr>
+          <th>CSS変数</th>
+          <th>値</th>
+          <th>用途（<code>functional-design.md</code> §デザイン方針）</th>
+        </tr>
+        <tr>
+          <td><code>--primary</code></td>
+          <td><code>#e6ad0a</code></td>
+          <td>
+            accent。主ボタンの文字は
+            <code>--primary-foreground</code>（<code>#1c1c1e</code>）
+          </td>
+        </tr>
+        <tr>
+          <td><code>--brand-text</code></td>
+          <td><code>#8a6400</code></td>
+          <td>accent-text</td>
+        </tr>
+        <tr>
+          <td><code>--brand-tint</code></td>
+          <td><code>#fff8e1</code></td>
+          <td>accent-tint</td>
+        </tr>
+        <tr>
+          <td><code>--muted-foreground</code></td>
+          <td><code>#6c6c70</code></td>
+          <td>text-2</td>
+        </tr>
+        <tr>
+          <td><code>--fill</code> / <code>--muted</code></td>
+          <td><code>#f2f2f7</code></td>
+          <td>fill</td>
+        </tr>
+        <tr>
+          <td><code>--destructive</code></td>
+          <td><code>#d9443a</code></td>
+          <td>danger</td>
+        </tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>影響範囲</h2>
+      <ul class="impact">
+        <li>
+          変わる：詳細画面（S-05）の全体、持ち物・カテゴリ・タグの削除の流れ（確認ダイアログ
+          → 取り消し）、持ち物の並び順
+        </li>
+        <li>なくなる：S-06〜S-08 のルートと画面部品</li>
+        <li>見た目のみ変わる：S-01〜S-04・S-09（配色トークンの変更に追従）。S-04 は用語を「名前」に統一</li>
+        <li>
+          変わらない：Repository 層、認証、CSV
+          の列構成、チェックリストの削除・複製の流れ
+        </li>
+      </ul>
+    </section>
+  </body>
+</html>

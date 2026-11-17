@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <title>requirements.html — task-01: チェックリスト詳細画面の作り直し</title>
+    <style>
+      :root {
+        --primary: #2563eb;
+        --primary-dark: #1e40af;
+        --primary-light: #eff6ff;
+        --border: #e2e8f0;
+        --text: #1e293b;
+        --muted: #64748b;
+        --code-bg: #f1f5f9;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        max-width: 860px;
+        margin: 2rem auto;
+        padding: 0 1.5rem 3rem;
+        line-height: 1.7;
+        color: var(--text);
+        background: #fff;
+      }
+      .page-header {
+        background: linear-gradient(135deg, #1e3a5f 0%, var(--primary) 100%);
+        color: #fff;
+        padding: 1.5rem 2rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+      }
+      .page-header .badge {
+        display: inline-block;
+        background: rgba(255, 255, 255, 0.2);
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 0.2em 0.7em;
+        border-radius: 999px;
+        margin-bottom: 0.6rem;
+      }
+      .page-header h1 {
+        margin: 0;
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: #fff;
+      }
+      section {
+        margin-bottom: 1.5rem;
+        padding: 1.25rem 1.5rem;
+        border: 1px solid var(--border);
+        border-left: 4px solid var(--primary);
+        border-radius: 6px;
+        background: #fff;
+      }
+      section h2 {
+        margin: 0 0 0.9rem;
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--primary);
+      }
+      section p {
+        margin: 0 0 0.5rem;
+        font-size: 0.95rem;
+      }
+      section p:last-child {
+        margin-bottom: 0;
+      }
+      code {
+        background: var(--code-bg);
+        color: #c2410c;
+        padding: 0.1em 0.35em;
+        border-radius: 3px;
+        font-size: 0.87em;
+        font-family: "SFMono-Regular", Consolas, monospace;
+      }
+      ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      ul li {
+        position: relative;
+        padding: 0.35em 0 0.35em 1.8em;
+        font-size: 0.95rem;
+        border-bottom: 1px solid #f1f5f9;
+      }
+      ul li:last-child {
+        border-bottom: none;
+      }
+      .stories li::before {
+        content: "👤";
+        position: absolute;
+        left: 0;
+        top: 0.3em;
+        font-size: 0.9em;
+      }
+      .checklist li::before {
+        content: "☐";
+        position: absolute;
+        left: 0;
+        top: 0.3em;
+        color: var(--primary);
+        font-size: 1.1em;
+        line-height: 1.4;
+      }
+      .constraints li::before {
+        content: "⚠️";
+        position: absolute;
+        left: 0;
+        top: 0.35em;
+        font-size: 0.8em;
+      }
+      section.constraint-section {
+        border-left-color: #f59e0b;
+        background: #fffbeb;
+      }
+      section.constraint-section h2 {
+        color: #92400e;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page-header">
+      <div class="badge">Requirements</div>
+      <h1>task-01: チェックリスト詳細画面の作り直し</h1>
+    </div>
+
+    <section>
+      <h2>サマリ</h2>
+      <p>
+        詳細画面（S-05）を準備モード／編集モードの切り替え式に作り直し、持ち物編集・カテゴリ管理・タグ管理（S-06〜S-08）を統合する。
+        持ち物の並べ替え・一括カテゴリ移動・一括タグ付与・解除・削除の取り消しを加え、見た目をメモアプリ風にそろえる。
+      </p>
+    </section>
+
+    <section>
+      <h2>ユーザーストーリー</h2>
+      <ul class="stories">
+        <li>
+          US-21・US-22：荷造りしながらチェックし、表示中の残り件数と準備完了を把握したい
+        </li>
+        <li>
+          US-19：行き先で絞り込み、共通の持ち物が残る理由も分かるようにしたい
+        </li>
+        <li>
+          US-11：複数の持ち物を選んで、まとめて削除・カテゴリ移動・行き先の付与と解除をしたい
+        </li>
+        <li>US-12：誤って削除・リセットしたときにすぐ元に戻したい</li>
+        <li>US-25：カテゴリ内の持ち物の並び順を変えたい</li>
+        <li>US-03・US-10：カテゴリとタグを画面を移動せずに管理したい</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>受け入れ条件</h2>
+      <ul class="checklist">
+        <li>
+          <code>product-requirements.md</code> の
+          AC-02〜AC-05・AC-07・AC-08・AC-10・AC-11 を満たす
+        </li>
+        <li>
+          詳細画面で［編集］を押すと編集モード、［完了］で準備モードに戻り、画面遷移を伴わない
+        </li>
+        <li>
+          編集モードでは絞り込みを適用せず全件を表示し、準備モードに戻ると元の絞り込みに戻る
+        </li>
+        <li>編集モードで追加した持ち物には、準備モードで選択中の行き先を自動で付けない</li>
+        <li>
+          行を押すと持ち物の編集シートが開き、名前・必要数・カテゴリ・行き先・並び順・削除を変更できる
+        </li>
+        <li>
+          持ち物の並び順の変更が、再読み込み後も準備モードの表示順に反映される
+        </li>
+        <li>
+          削除（持ち物・一括・カテゴリ・タグ）と一括リセットは確認なしで実行され、通知の［元に戻す］で7秒間取り消せる
+        </li>
+        <li>
+          <code>/lists/[listId]/items</code>・<code>categories</code>・<code
+            >tags</code
+          >
+          のルートが存在しない
+        </li>
+        <li>
+          画面の配色・文字サイズ・文言が
+          <code>functional-design.md</code> §デザイン方針 に従う
+        </li>
+      </ul>
+    </section>
+
+    <section class="constraint-section">
+      <h2>制約事項</h2>
+      <ul class="constraints">
+        <li>
+          <code>Item.sortOrder</code>
+          は既存データがあるため任意項目で追加する（<code
+            >architecture-db.md</code
+          >
+          §落とし穴）
+        </li>
+        <li>
+          Lambda関数・<code>shared/</code>・新規の依存パッケージを追加しない
+        </li>
+        <li>
+          一括処理は既存の同時実行数制限付き並列実行（<code>concurrency-service.ts</code>）を使う
+        </li>
+        <li>
+          S-04・S-09・認証画面の構成は変えない（配色トークンの変更に追従するのみ）
+        </li>
+      </ul>
+    </section>
+  </body>
+</html>

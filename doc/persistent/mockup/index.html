@@ -24,12 +24,12 @@
       <pre style="background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 1rem; font-size: 0.8rem; overflow-x: auto">S-01 サインイン ┬ S-02 サインアップ
                  └ S-03 パスワード再設定
   └ S-04 チェックリスト一覧（名称・日数・最終更新のみ／進捗は出さない）
-       ├ カードをタップ → S-05 詳細（準備実行・チェックは行の右端）
-       │    └ ⋯ メニュー ┬ S-06 持ち物編集（追加・修正・一括削除）
-       │                  ├ S-07 カテゴリ管理（並び順・削除）
-       │                  ├ S-08 タグ管理
-       │                  └ S-09 CSV入出力（パソコンのみ）
-       └ ヘッダー（パソコンのみ）→ S-09 CSV入出力</pre>
+       ├ カードをタップ → S-05 詳細
+       │    ├ 準備モード（チェックは行の左の丸・行き先で絞り込み・日数）
+       │    ├ ［編集］→ 編集モード（四角で選択して一括操作・行を押すと編集シート・カテゴリ／行き先の管理シート）
+       │    └ ⋯ メニュー → S-09 CSV入出力（パソコンのみ）
+       └ S-06〜S-08は欠番（S-05の編集モードへ統合）
+</pre>
 
       <a class="link" href="s01-signin.html">
         <div class="card">
@@ -59,24 +59,6 @@
         <div class="card">
           <h3>S-05 チェックリスト詳細画面</h3>
           <div class="meta">F-06 フィルタ / F-07 チェック / F-08 一括リセット / F-09 数量計算 / F-10 日数 ／ AC-03〜AC-05</div>
-        </div>
-      </a>
-      <a class="link" href="s06-item-edit.html">
-        <div class="card">
-          <h3>S-06 持ち物編集画面</h3>
-          <div class="meta">F-03 持ち物（直接入力） / F-09 数量 / F-15 一括削除 ／ AC-02, AC-08</div>
-        </div>
-      </a>
-      <a class="link" href="s07-category.html">
-        <div class="card">
-          <h3>S-07 カテゴリ管理画面</h3>
-          <div class="meta">F-04 カテゴリ管理（直接入力・並び順・紐付く持ち物があれば削除不可） ／ AC-10</div>
-        </div>
-      </a>
-      <a class="link" href="s08-tag.html">
-        <div class="card">
-          <h3>S-08 タグ管理画面</h3>
-          <div class="meta">F-05 タグ管理（直接入力・付与されていれば削除不可） ／ AC-11</div>
         </div>
       </a>
       <a class="link" href="s09-csv.html">

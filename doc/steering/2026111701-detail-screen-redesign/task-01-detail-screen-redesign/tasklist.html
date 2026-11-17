@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <title>tasklist.html — task-01: チェックリスト詳細画面の作り直し</title>
+    <style>
+      :root {
+        --primary: #2563eb;
+        --border: #e2e8f0;
+        --text: #1e293b;
+        --muted: #64748b;
+        --code-bg: #f1f5f9;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        max-width: 860px;
+        margin: 2rem auto;
+        padding: 0 1.5rem 3rem;
+        line-height: 1.7;
+        color: var(--text);
+        background: #fff;
+      }
+      .page-header {
+        background: linear-gradient(135deg, #1e3a5f 0%, var(--primary) 100%);
+        color: #fff;
+        padding: 1.5rem 2rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+      }
+      .page-header .badge {
+        display: inline-block;
+        background: rgba(255, 255, 255, 0.2);
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 0.2em 0.7em;
+        border-radius: 999px;
+        margin-bottom: 0.6rem;
+      }
+      .page-header h1 {
+        margin: 0;
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: #fff;
+      }
+      section {
+        margin-bottom: 1.5rem;
+        padding: 1.25rem 1.5rem;
+        border: 1px solid var(--border);
+        border-left: 4px solid var(--primary);
+        border-radius: 6px;
+        background: #fff;
+      }
+      section h2 {
+        margin: 0 0 0.9rem;
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--primary);
+      }
+      section h3 {
+        margin: 1.2rem 0 0.4rem;
+        font-size: 0.85rem;
+        font-weight: 700;
+      }
+      section h3:first-of-type {
+        margin-top: 0;
+      }
+      code {
+        background: var(--code-bg);
+        color: #c2410c;
+        padding: 0.1em 0.35em;
+        border-radius: 3px;
+        font-size: 0.87em;
+        font-family: "SFMono-Regular", Consolas, monospace;
+      }
+      ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      ul li {
+        position: relative;
+        padding: 0.3em 0 0.3em 1.8em;
+        font-size: 0.93rem;
+        border-bottom: 1px solid #f1f5f9;
+      }
+      ul li:last-child {
+        border-bottom: none;
+      }
+      .checklist li::before {
+        content: "☐";
+        position: absolute;
+        left: 0;
+        top: 0.25em;
+        color: var(--primary);
+        font-size: 1.1em;
+        line-height: 1.4;
+      }
+      .checklist li.done::before {
+        content: "✓";
+        color: #16a34a;
+        font-weight: 700;
+      }
+      .done-list li::before {
+        content: "✓";
+        position: absolute;
+        left: 0;
+        top: 0.3em;
+        color: #16a34a;
+        font-weight: 700;
+      }
+      section.done-section {
+        border-left-color: #16a34a;
+        background: #f0fdf4;
+      }
+      section.done-section h2 {
+        color: #15803d;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page-header">
+      <div class="badge">Tasklist</div>
+      <h1>task-01: チェックリスト詳細画面の作り直し</h1>
+    </div>
+
+    <section>
+      <h2>実装チェックリスト</h2>
+
+      <h3>フェーズA: ドキュメント</h3>
+      <ul class="checklist">
+        <li class="done">
+          <code>product-requirements.md</code>
+          の画面一覧・機能・受け入れ条件・機能要件を更新
+        </li>
+        <li class="done">
+          <code>functional-design.md</code>
+          の画面設計・デザイン方針・データモデル・一括処理・取り消しを更新
+        </li>
+        <li class="done">
+          <code>doc/persistent/mockup/</code> の S-05 を更新し、S-06〜S-08
+          を削除
+        </li>
+      </ul>
+
+      <h3>フェーズB: データモデルとService</h3>
+      <ul class="checklist">
+        <li class="done">
+          <code>amplify/data/resource.ts</code> の Item に
+          <code>sortOrder</code> を追加し、sandbox へ反映
+        </li>
+        <li class="done">
+          <code>utils/sort-utils.ts</code> に持ち物の表示順の比較関数を追加
+        </li>
+        <li class="done">
+          <code>item-service.ts</code>
+          に表示順の採番・並べ替え・一括カテゴリ移動・一括タグ付与・解除・作り直しを追加
+        </li>
+        <li class="done">
+          <code>item-filter-service.ts</code> のカテゴリ内の並びを表示順に変更
+        </li>
+        <li class="done">
+          <code>category-service.ts</code> /
+          <code>tag-service.ts</code> に作り直しを追加
+        </li>
+        <li class="done">
+          <code>check-list-service.ts</code>（複製）と
+          <code>csv-service.ts</code>（取り込み）で表示順を引き継ぐ・採番する
+        </li>
+      </ul>
+
+      <h3>フェーズC: 共通部品とHook</h3>
+      <ul class="checklist">
+        <li class="done"><code>globals.css</code> に配色トークンを設定</li>
+        <li class="done">
+          <code>models/undo-toast-content.ts</code> と
+          <code>hooks/use-undo-toast.ts</code> を作成
+        </li>
+        <li class="done">
+          <code>components/common/</code> に
+          <code>bottom-sheet.tsx</code>・<code>undo-toast.tsx</code>・<code
+            >chip.tsx</code
+          >
+          を作成
+        </li>
+        <li class="done">
+          <code>inline-text.tsx</code> に Enter 後もフォーカスを残す指定を追加
+        </li>
+        <li class="done">
+          <code>use-check-state.ts</code> を残り件数・取り消し付きリセットに変更
+        </li>
+        <li class="done">
+          <code>use-item-edit.ts</code>
+          を編集モード（選択・追加・一括操作・並べ替え・削除）に作り直す
+        </li>
+        <li class="done">
+          <code>use-category.ts</code> /
+          <code>use-tag.ts</code> を取り消し付き削除に変更
+        </li>
+      </ul>
+
+      <h3>フェーズD: 詳細画面</h3>
+      <ul class="checklist">
+        <li class="done"><code>list-detail-body.tsx</code> をモード切り替え式に作り直す</li>
+        <li class="done">
+          準備ビュー（行き先チップ・日数・チェックを外す・準備完了・チェック行）を作成
+        </li>
+        <li class="done">編集ビュー（管理入口・選択行・追加欄・下部バー）を作成</li>
+        <li class="done">
+          持ち物の編集シート・カテゴリ管理シート・タグ管理シート・一括行き先シート・一括カテゴリ移動シート・名前変更シート・「⋯」シートを作成
+        </li>
+        <li class="done">S-06〜S-08 のページ・画面部品・パス区間・未使用の共通部品を削除</li>
+      </ul>
+
+      <h3>フェーズE: 検証と片付け</h3>
+      <ul class="checklist">
+        <li class="done">
+          <code>/crg-review</code> でレイヤー別・統合レビューを行い、指摘を解消
+        </li>
+        <li class="done">
+          画面見直しモック（<code>src/app/mock/</code>）と
+          <code>next.config.js</code> の一時設定を削除
+        </li>
+        <li class="done">lint / 両スコープの tsc / build を実行</li>
+      </ul>
+    </section>
+
+    <section class="done-section">
+      <h2>完了条件</h2>
+      <ul class="done-list">
+        <li>
+          <code>npm run lint</code> と両スコープの
+          <code>tsc --noEmit</code> がエラー0、<code>npm run build</code>
+          が成功する
+        </li>
+        <li>requirements.html の受け入れ条件をすべて満たす</li>
+        <li><code>/crg-review</code> の統合判定が PASS</li>
+        <li>
+          Lambda 関数・<code>shared/</code>・新規の依存パッケージが増えていない
+        </li>
+      </ul>
+    </section>
+  </body>
+</html>

@@ -68,7 +68,7 @@
       <ul class="approach">
         <li><strong>レイヤーを下から積む。</strong>各フェーズで Repository → Service → Hook → Component の順に実装する。Hook から Repository を直接呼ばない</li>
         <li><strong>詳細データは1回だけ読む。</strong>チェックリストの持ち物・カテゴリ・タグを詳細画面で一括取得し、絞り込み・数量計算・進捗集計・削除可否判定はすべてクライアント側の Service で行う。操作のたびに再取得しない</li>
-        <li><strong>直接入力を1箇所に集約する。</strong>フォーカス喪失時の保存・楽観的更新・失敗時の巻き戻しを共通コンポーネントに実装し、持ち物・カテゴリ・タグで共用する</li>
+        <li><strong>直接入力の部品を1つに集約する。</strong>入力欄の確定（フォーカス喪失・Enter）と表示の巻き戻しは共通コンポーネント <code>InlineText</code> が担い、持ち物・カテゴリ・タグ・日数で共用する。状態の楽観的更新と失敗時の巻き戻しは各 Hook が担う</li>
         <li><strong>一括処理を1つのユーティリティに集約する。</strong>同時実行数を制限した並列実行を Service に置き、リセット・一括削除・複製・チェックリスト削除・CSV取り込みで共用する</li>
         <li><strong>確認ダイアログを共通化する。</strong>破壊的操作の確認のみ Dialog を使い、件数と取り消せない旨を渡す共通コンポーネントにする</li>
       </ul>
@@ -113,6 +113,23 @@
         一覧取得は <code>checkListId</code> のセカンダリインデックスのクエリ関数で行い（<code>list</code> の <code>filter</code> は使わない）、<code>nextToken</code> を辿って全件を返す。
         型付きクライアントが返す <code>errors</code> は加工せずに投げる。持ち物の数量を消すときは <code>null</code> を送る（<code>undefined</code> では更新されない）。
       </p>
+      <h3>利用者向けのエラーは専用の型に限る</h3>
+      <p>
+        Service は利用者に見せる検証エラー（範囲外・名称の重複・削除不可・認証の失敗）だけを <code>UserFacingError</code>（<code>src/app/models/user-facing-error.ts</code>）で投げ、文言は <code>CHECK_LIST_LIMIT</code> などの定数から組み立てる。
+        Hook は <code>UserFacingError</code> の場合だけ <code>message</code> を表示し、それ以外（AppSync の errors 配列・内部 ID を含む診断用の <code>Error</code>・通信や Amplify の英語のエラー）は固定の代替文言にする。
+        範囲の検証と文言の持ち主は Service に一本化し、Hook は文字列から数値への形式の解析だけを行う。
+      </p>
+      <h3>認証も Service・Repository を経由する</h3>
+      <p>
+        <code>aws-amplify/auth</code> の呼び出し（サインイン・サインアップ・確認コード・パスワード再設定）は <code>src/app/repositories/auth-repository.ts</code> に閉じ、
+        次の手順の判定と Cognito のエラー名から文言への対応は <code>src/app/services/auth-service.ts</code> が担う。Hook は Service だけを呼ぶ。
+      </p>
+      <h3>一括削除は段階で失敗したら止める</h3>
+      <p>
+        チェックリストの削除（持ち物 → タグ・カテゴリ → 本体）は、前の段階で1件でも失敗したら次の段階へ進まずに結果を返す。
+        持ち物が残ったままカテゴリを消すと、所属カテゴリのない持ち物が残り、詳細画面の表示が成り立たなくなるため。
+        各段階の中の処理は1回の並列実行にまとめ、同時リクエスト数を <code>CHECK_LIST_LIMIT.CONCURRENCY</code> に収める。
+      </p>
       <h3>配列ユーティリティの置き場所</h3>
       <p>
         <code>coding-standards.md</code> §DRY は配列の汎用処理を <code>shared/utils/array-utils.ts</code> に置くとするが、本プロダクトはバックエンドのコードを持たず <code>shared/</code> を使わない設計のため、
@@ -133,7 +150,12 @@
         <tr><td><code>CsvParseResult</code></td><td>正常行の配列と、行番号・理由を持つ失敗行の配列</td></tr>
         <tr><td><code>ImportDiff</code></td><td>新規・更新・変更なし・削除・失敗の各配列</td></tr>
         <tr><td><code>BulkResult</code></td><td>成功件数・失敗件数・失敗の理由</td></tr>
+        <tr><td><code>UserFacingError</code></td><td>利用者に表示してよい文言を持つエラー（<code>Error</code> のサブクラス）</td></tr>
       </table>
+      <p class="note">
+        <code>Item.tagIds</code> はスキーマで要素必須の ID 配列（<code>a.id().required().array()</code>）とし、要素に null を含めない。
+      </p>
+
     </section>
 
     <section>
@@ -152,6 +174,11 @@
         <tr><td><code>src/app/repositories/category-repository.ts</code></td><td>カテゴリのデータアクセス</td></tr>
         <tr><td><code>src/app/repositories/tag-repository.ts</code></td><td>タグのデータアクセス</td></tr>
         <tr><td><code>src/app/repositories/item-repository.ts</code></td><td>持ち物のデータアクセス</td></tr>
+        <tr><td><code>src/app/repositories/auth-repository.ts</code></td><td>認証（Cognito）の呼び出し</td></tr>
+        <tr><td><code>src/app/models/user-facing-error.ts</code></td><td>利用者向けエラーの型</td></tr>
+        <tr><td><code>src/app/models/{auth-redirect,category-item-group,category-progress-group,check-list-detail,item-progress}.ts</code></td><td>認証後の遷移先・カテゴリ別の持ち物と進捗・詳細データ・進捗の型</td></tr>
+        <tr><td><code>src/app/enums/{app-path,auth-form-step,auth-next-step,category-delete-blocker,category-move-direction,csv-import-step}.ts</code></td><td>画面パス・認証フォームの段階・認証の次の手順・カテゴリを削除できない理由・並び替えの方向・CSV 取り込みの段階</td></tr>
+        <tr><td><code>src/app/utils/{amplify-response,list-path,name,sort}-utils.ts</code></td><td>AppSync 応答の展開とページ送り・パスの組み立て・名称の重複判定・作成日時の比較</td></tr>
         <tr><td><code>src/app/services/concurrency-service.ts</code></td><td>同時実行数を制限した並列実行と結果の集約</td></tr>
         <tr><td><code>src/app/utils/array-utils.ts</code></td><td>groupBy・keyBy 等の配列ユーティリティ（使う関数のみ）</td></tr>
       </table>
@@ -161,11 +188,12 @@
         <tr><th>パス</th><th>役割</th></tr>
         <tr><td><code>src/app/services/check-list-service.ts</code></td><td>作成（既定カテゴリ付き）・複製・配下ごとの削除</td></tr>
         <tr><td><code>src/app/services/item-service.ts</code></td><td>持ち物の追加・更新・一括削除・一括リセット</td></tr>
-        <tr><td><code>src/app/services/category-service.ts</code></td><td>並び順の変更・名称重複の検査・削除可否の判定</td></tr>
+        <tr><td><code>src/app/services/category-service.ts</code></td><td>並び順の変更・名称重複の検査・削除可否の判定（所属する持ち物がある場合と最後の1件の場合を区別）</td></tr>
         <tr><td><code>src/app/services/tag-service.ts</code></td><td>名称重複の検査・削除可否の判定</td></tr>
         <tr><td><code>src/app/services/item-quantity-service.ts</code></td><td>1日あたり×日数の計算</td></tr>
         <tr><td><code>src/app/services/item-filter-service.ts</code></td><td>タグ絞り込みとカテゴリ別の整列・進捗集計</td></tr>
         <tr><td><code>src/app/services/csv-service.ts</code></td><td>CSV の生成・解析・既存との差分算出</td></tr>
+        <tr><td><code>src/app/services/auth-service.ts</code></td><td>認証の次の手順の判定と、エラーの利用者向け文言への変換</td></tr>
       </table>
 
       <h3>Hook</h3>
@@ -177,6 +205,8 @@
         <tr><td><code>src/app/hooks/use-item-edit.ts</code></td><td>直接入力の保存・選択状態・一括削除</td></tr>
         <tr><td><code>src/app/hooks/use-category.ts</code> / <code>use-tag.ts</code></td><td>カテゴリ・タグの追加・改名・並び替え・削除</td></tr>
         <tr><td><code>src/app/hooks/use-csv.ts</code></td><td>エクスポート・ファイル解析・差分の保持・取り込み実行</td></tr>
+        <tr><td><code>src/app/hooks/{use-sign-in,use-sign-up,use-password-reset,use-auth-action,use-auth-redirect}.ts</code></td><td>認証フォームの状態と送信・認証状態による遷移</td></tr>
+        <tr><td><code>src/app/hooks/{use-operation,use-tag-filter}.ts</code></td><td>操作の実行中状態とエラー表示・タグ絞り込みの選択状態</td></tr>
       </table>
 
       <h3>ページ（ルーティング）</h3>
@@ -188,6 +218,8 @@
         <tr><td><code>src/app/(auth-page)/lists/page.tsx</code></td><td>S-04</td></tr>
         <tr><td><code>src/app/(auth-page)/lists/[listId]/page.tsx</code></td><td>S-05</td></tr>
         <tr><td><code>src/app/(auth-page)/lists/[listId]/{items,categories,tags,csv}/page.tsx</code></td><td>S-06〜S-09</td></tr>
+        <tr><td><code>src/app/(public-page)/layout.tsx</code></td><td>認証済みなら一覧へ遷移させる公開ページの共通レイアウト</td></tr>
+        <tr><td><code>src/app/providers/amplify-provider.tsx</code></td><td>標準の認証 UI（<code>Authenticator</code>）をやめ、認証状態の提供（<code>Authenticator.Provider</code>）だけにする</td></tr>
       </table>
 
       <h3>コンポーネント</h3>
@@ -195,7 +227,9 @@
         <tr><th>パス</th><th>役割</th></tr>
         <tr><td><code>src/app/components/common/app-header.tsx</code></td><td>共通ヘッダー（task-01 のホームから転用）</td></tr>
         <tr><td><code>src/app/components/common/confirm-dialog.tsx</code></td><td>破壊的操作の確認</td></tr>
-        <tr><td><code>src/app/components/common/inline-text.tsx</code></td><td>直接入力の共通入力欄</td></tr>
+        <tr><td><code>src/app/components/common/inline-text.tsx</code></td><td>直接入力の共通入力欄（追加行は保存が終わるまで無効にし、追加中の名称を案内に出す）</td></tr>
+        <tr><td><code>src/app/globals.css</code></td><td>テーマのアクセント色（<code>--primary</code> / <code>--ring</code>）を青にする</td></tr>
+        <tr><td><code>src/app/components/common/*.tsx</code>（上記以外）</td><td>操作メニュー・画面ヘッダー・進捗バー・タグ絞り込み・通知・読み込み表示</td></tr>
         <tr><td><code>src/app/components/auth/*.tsx</code></td><td>サインイン・サインアップ・パスワード再設定のフォーム</td></tr>
         <tr><td><code>src/app/components/check-list/*.tsx</code></td><td>一覧画面と各カード・操作メニュー</td></tr>
         <tr><td><code>src/app/components/list-detail/*.tsx</code></td><td>詳細画面・ツールバー・チェック行</td></tr>
