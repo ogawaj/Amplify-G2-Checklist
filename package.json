@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "sandbox": "npm run lint && npx ampx sandbox --profile $npm_config_profile --stream-function-logs",
+    "sandbox": "npm run lint && npx ampx sandbox --profile nima --stream-function-logs",
     "postinstall": "node scripts/prepare-sandbox.cjs"
   },
   "dependencies": {

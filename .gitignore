@@ -43,3 +43,5 @@ amplifyconfiguration*
 # sandbox 環境変数
 amplify/common/enums/env-variable-sandbox.ts
 src/app/enums/env-variable-sandbox.ts
+# レビュー（/crg-review）の一時ファイル
+.crg-tmp/

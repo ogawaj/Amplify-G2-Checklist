@@ -88,14 +88,9 @@ Amplify Hosting の管理画面でブランチごとに `NEXT_PUBLIC_ENV=dev` �
 
 `npm run sandbox` → `npm run dev` の順に起動してください。
 
-| 順番 | コマンド                                     | 説明                             |
-| ---- | -------------------------------------------- | -------------------------------- |
-| 1    | `npm run sandbox --profile=<プロファイル名>` | Amplify サンドボックス環境を起動 |
-| 2    | `npm run dev`                                | Next.js 開発サーバーを起動       |
+| 順番 | コマンド          | 説明                             |
+| ---- | ----------------- | -------------------------------- |
+| 1    | `npm run sandbox` | Amplify サンドボックス環境を起動 |
+| 2    | `npm run dev`     | Next.js 開発サーバーを起動       |
 
-`--profile` には AWS CLI のプロファイル名を指定します。
-
-```bash
-# 例: "my-profile" を使ってサンドボックスを起動
-npm run sandbox --profile=my-profile
-```
+AWS CLIのプロファイルは`nima`に固定しています（`package.json`の`sandbox`スクリプト）。
