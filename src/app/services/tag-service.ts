@@ -9,19 +9,33 @@ import {
 } from "@/src/app/repositories/tag-repository";
 import { getItemTagIds } from "@/src/app/services/item-service";
 import { isNameTaken } from "@/src/app/utils/name-utils";
-import { compareByCreatedAt } from "@/src/app/utils/sort-utils";
+import {
+  assignSequentialOrder,
+  compareBySortOrder,
+  moveToPosition,
+  nextSortOrder,
+  saveSequentialOrder,
+} from "@/src/app/utils/sort-utils";
 
 /**
- * チェックリストのタグを作成日時の昇順で取得する
+ * タグを表示順に並べる（{@link compareBySortOrder} の順）
+ * @param tags - タグ
+ * @returns 表示順に並べたタグ（新しい配列）
+ */
+export const sortTags = (tags: readonly Tag[]): Tag[] =>
+  [...tags].sort(compareBySortOrder);
+
+/**
+ * チェックリストのタグを表示順で取得する
  * @param checkListId - チェックリストID
- * @returns タグ一覧
+ * @returns タグ一覧（{@link sortTags} の順）
  */
 export const listTags = async (checkListId: string): Promise<Tag[]> => {
-  return (await listTagRecords(checkListId)).sort(compareByCreatedAt);
+  return sortTags(await listTagRecords(checkListId));
 };
 
 /**
- * タグを作成する
+ * タグを末尾に作成する（表示順は {@link nextSortOrder} で決める）
  * @param checkListId - チェックリストID
  * @param name - タグ名
  * @param tags - チェックリストの既存タグ
@@ -36,8 +50,47 @@ export const createTag = async (
   if (isNameTaken(tags, name)) {
     throw new UserFacingError("同じ名前のタグが既にあります");
   }
-  return await createTagRecord({ checkListId, name: name.trim() });
+  return await createTagRecord({
+    checkListId,
+    name: name.trim(),
+    sortOrder: nextSortOrder(tags),
+  });
 };
+
+/**
+ * タグを別のタグの位置へ動かしたときの並びを求める（保存はしない。並び方は {@link moveToPosition} のとおり）
+ * @param tags - チェックリストの全タグ
+ * @param tagId - 動かすタグID
+ * @param targetTagId - 移動先にあるタグID
+ * @returns 移動後の全タグ（表示順は0からの連番に振り直す）
+ * @throws {Error} どちらかのタグが存在しない場合
+ */
+export const planTagMove = (
+  tags: readonly Tag[],
+  tagId: string,
+  targetTagId: string,
+): (Tag & { sortOrder: number })[] =>
+  assignSequentialOrder(moveToPosition(sortTags(tags), tagId, targetTagId));
+
+/**
+ * タグを別のタグの位置へ動かし、表示順を保存する（{@link planTagMove} の並びにする）
+ * @param tags - チェックリストの全タグ
+ * @param tagId - 動かすタグID
+ * @param targetTagId - 移動先にあるタグID
+ * @returns 移動後の全タグ（表示順は0からの連番に振り直す）
+ * @throws {Error} どちらかのタグが存在しない場合
+ * @throws {unknown} 表示順の書き込みに失敗した場合（{@link saveSequentialOrder}。一部だけ書き込まれていることがある）
+ */
+export const moveTag = async (
+  tags: readonly Tag[],
+  tagId: string,
+  targetTagId: string,
+): Promise<Tag[]> =>
+  await saveSequentialOrder(
+    planTagMove(tags, tagId, targetTagId),
+    tags,
+    updateTagRecord,
+  );
 
 /**
  * タグ名を変更する
@@ -86,9 +139,13 @@ export const deleteTag = async (
 };
 
 /**
- * 削除したタグを同じ名前で作り直す（削除の取り消し）。IDは新しくなる
+ * 削除したタグを同じ名前と表示順で作り直す（削除の取り消し）。IDは新しくなる
  * @param tag - 削除したタグ
  * @returns 作り直したタグ
  */
 export const restoreTag = async (tag: Tag): Promise<Tag> =>
-  await createTagRecord({ checkListId: tag.checkListId, name: tag.name });
+  await createTagRecord({
+    checkListId: tag.checkListId,
+    name: tag.name,
+    sortOrder: tag.sortOrder,
+  });

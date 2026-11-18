@@ -37,12 +37,13 @@ export const getCheckListById = async (
 
 /**
  * チェックリストを作成する
- * @param input - 名称と日数
+ * @param input - 名称・日数・表示順（省略すると未設定）
  * @returns 作成したチェックリスト
  * @throws {unknown} AppSyncのエラーをそのまま投げる
  */
 export const createCheckList = async (
-  input: Pick<CheckList, "name" | "durationDays">,
+  input: Pick<CheckList, "name" | "durationDays"> &
+    Partial<Pick<CheckList, "sortOrder">>,
 ): Promise<CheckList> => {
   return unwrapData(await client.models.CheckList.create(input));
 };
@@ -55,7 +56,16 @@ export const createCheckList = async (
  */
 export const updateCheckList = async (
   input: Pick<CheckList, "id"> &
-    Partial<Pick<CheckList, "name" | "durationDays">>,
+    Partial<
+      Pick<
+        CheckList,
+        | "name"
+        | "durationDays"
+        | "hiddenTagIds"
+        | "isUntaggedHidden"
+        | "sortOrder"
+      >
+    >,
 ): Promise<CheckList> => {
   return unwrapData(await client.models.CheckList.update(input));
 };

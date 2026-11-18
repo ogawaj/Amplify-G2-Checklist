@@ -26,7 +26,11 @@ import {
   toBulkWriteOutcome,
 } from "@/src/app/services/concurrency-service";
 import { mergeById } from "@/src/app/utils/array-utils";
-import { compareItemOrder } from "@/src/app/utils/sort-utils";
+import {
+  assignSequentialOrder,
+  compareBySortOrder,
+  moveToPosition,
+} from "@/src/app/utils/sort-utils";
 
 /** 1日あたりの必要数が範囲外のときの文言 */
 const QUANTITY_RANGE_MESSAGE = `1日あたりの必要数は${CHECK_LIST_LIMIT.QUANTITY_MIN}〜${CHECK_LIST_LIMIT.QUANTITY_MAX}の整数で指定してください`;
@@ -38,6 +42,14 @@ const QUANTITY_RANGE_MESSAGE = `1日あたりの必要数は${CHECK_LIST_LIMIT.Q
  */
 export const getItemTagIds = (item: Pick<Item, "tagIds">): string[] =>
   item.tagIds ?? [];
+
+/**
+ * 持ち物が非表示（準備モードで表示しない）かを判定する
+ * @param item - 持ち物
+ * @returns 非表示なら true（未設定は false）
+ */
+export const isItemHidden = (item: Pick<Item, "isHidden">): boolean =>
+  item.isHidden ?? false;
 
 /**
  * 1日あたりの必要数として指定できる値かを判定する
@@ -52,11 +64,11 @@ export const isValidQuantityPerDay = (quantityPerDay: number): boolean =>
 /**
  * チェックリストの持ち物を表示順で取得する
  * @param checkListId - チェックリストID
- * @returns 持ち物一覧（{@link compareItemOrder} の順）
+ * @returns 持ち物一覧（{@link compareBySortOrder} の順）
  */
 export const listItems = async (checkListId: string): Promise<Item[]> => {
   const items = await listItemRecords(checkListId);
-  return items.sort(compareItemOrder);
+  return items.sort(compareBySortOrder);
 };
 
 /**
@@ -155,7 +167,7 @@ const updateItemsConcurrently = async (
 };
 
 /**
- * カテゴリ内の持ち物の表示順を 0 からの連番にそろえる。値が変わる持ち物だけを更新する
+ * カテゴリ内の持ち物の表示順を 0からの連番にそろえる。値が変わる持ち物だけを更新する
  * @param items - チェックリスト内の全持ち物
  * @param categoryId - 対象のカテゴリID
  * @returns 表示順にそろえたカテゴリ内の持ち物（更新したものは更新後の値）
@@ -167,7 +179,7 @@ const normalizeItemOrder = async (
 ): Promise<Item[]> => {
   const siblings = items
     .filter((item) => item.categoryId === categoryId)
-    .sort(compareItemOrder);
+    .sort(compareBySortOrder);
   const inputs = siblings.flatMap((item, index) =>
     item.sortOrder === index ? [] : [{ id: item.id, sortOrder: index }],
   );
@@ -214,10 +226,66 @@ export const appendItem = async (
 };
 
 /**
- * 持ち物を同じカテゴリ内で1つ上または下の持ち物と入れ替える
+ * 持ち物を同じカテゴリ内の別の持ち物の位置へ動かしたときの、カテゴリ内の新しい並びを求める（保存はしない。並び方は {@link moveToPosition} のとおり）
+ * @param items - チェックリスト内の全持ち物
+ * @param itemId - 動かす持ち物のID
+ * @param targetItemId - 移動先にある持ち物のID（同じカテゴリ）
+ * @returns カテゴリ内の全持ち物（新しい表示順に並び、表示順は0からの連番に振り直したもの）
+ * @throws {Error} 持ち物が見つからない場合、または2つが別のカテゴリにある場合
+ * @example
+ * // A(0) B(1) C(2) で A を C の位置へ → B(0) C(1) A(2)
+ * planItemMove(items, "A", "C");
+ */
+export const planItemMove = (
+  items: readonly Item[],
+  itemId: string,
+  targetItemId: string,
+): Item[] => {
+  const item = items.find((candidate) => candidate.id === itemId);
+  const target = items.find((candidate) => candidate.id === targetItemId);
+  if (!item || !target) {
+    throw new Error(`持ち物が見つかりません: ${itemId}, ${targetItemId}`);
+  }
+  if (item.categoryId !== target.categoryId) {
+    throw new Error(`別のカテゴリへは並べ替えできません: ${itemId}`);
+  }
+  const siblings = items
+    .filter((candidate) => candidate.categoryId === item.categoryId)
+    .sort(compareBySortOrder);
+  return assignSequentialOrder(moveToPosition(siblings, itemId, targetItemId));
+};
+
+/**
+ * 持ち物を同じカテゴリ内の別の持ち物の位置へ動かし、表示順を保存する（{@link planItemMove} の並びにする）
+ * @param items - チェックリスト内の全持ち物
+ * @param itemId - 動かす持ち物のID
+ * @param targetItemId - 移動先にある持ち物のID（同じカテゴリ）
+ * @returns 並べ替え後のカテゴリ内の全持ち物
+ * @throws {Error} 持ち物が見つからない場合、または2つが別のカテゴリにある場合
+ * @throws {unknown} 表示順の書き込みに失敗した場合は最初の失敗理由（一部だけ書き込まれていることがある）
+ */
+export const moveItemTo = async (
+  items: readonly Item[],
+  itemId: string,
+  targetItemId: string,
+): Promise<Item[]> => {
+  const planned = planItemMove(items, itemId, targetItemId);
+  const currentOrders = new Map(items.map((item) => [item.id, item.sortOrder]));
+  const { result, values } = await updateItemsConcurrently(
+    planned
+      .filter((item) => currentOrders.get(item.id) !== item.sortOrder)
+      .map((item) => ({ id: item.id, sortOrder: item.sortOrder })),
+  );
+  if (result.failureCount > 0) throw result.failureReasons[0];
+  return mergeById(planned, values);
+};
+
+/**
+ * 持ち物を同じカテゴリ内で、表示中の持ち物のうち1つ上または下のものと入れ替える。間にある表示していない持ち物の位置は変えない
  * @param itemId - 動かす持ち物のID
  * @param items - チェックリスト内の全持ち物
  * @param delta - -1 で上へ、1 で下へ
+ * @param visibleItemIds - 表示中の持ち物のID（入れ替え相手の候補）
  * @returns 並べ替え後のカテゴリ内の全持ち物（表示順）。端で動かせない場合も連番にそろえた全件
  * @throws {Error} 持ち物が見つからない場合
  * @throws {unknown} 表示順の更新に失敗した場合は最初の失敗理由
@@ -226,15 +294,19 @@ export const moveItemOrder = async (
   itemId: string,
   items: readonly Item[],
   delta: -1 | 1,
+  visibleItemIds: readonly string[],
 ): Promise<Item[]> => {
   const target = items.find((item) => item.id === itemId);
   if (!target) throw new Error(`持ち物が見つかりません: ${itemId}`);
   const siblings = await normalizeItemOrder(items, target.categoryId);
   const index = siblings.findIndex((item) => item.id === itemId);
-  const neighbor = siblings[index + delta];
+  const candidates =
+    delta < 0 ? siblings.slice(0, index).reverse() : siblings.slice(index + 1);
+  const neighbor = candidates.find((item) => visibleItemIds.includes(item.id));
   if (!neighbor) return siblings;
+  const neighborIndex = siblings.indexOf(neighbor);
   const { result, values } = await updateItemsConcurrently([
-    { id: itemId, sortOrder: index + delta },
+    { id: itemId, sortOrder: neighborIndex },
     { id: neighbor.id, sortOrder: index },
   ]);
   if (result.failureCount > 0) throw result.failureReasons[0];
@@ -303,6 +375,25 @@ export const setTagOnItems = async (
 };
 
 /**
+ * 持ち物をまとめて非表示にする、または表示に戻す。変化のない持ち物は更新しない
+ * @param targets - 対象の持ち物
+ * @param isHidden - true で非表示、false で表示
+ * @param onProgress - 進捗の通知先
+ * @returns 一括処理の結果と、更新に成功した持ち物
+ */
+export const setHiddenOnItems = async (
+  targets: readonly Item[],
+  isHidden: boolean,
+  onProgress?: (progress: BulkProgress) => void,
+): Promise<BulkWriteOutcome<Item>> =>
+  await updateItemsConcurrently(
+    targets
+      .filter((item) => isItemHidden(item) !== isHidden)
+      .map((item) => ({ id: item.id, isHidden })),
+    onProgress,
+  );
+
+/**
  * 指定した持ち物をチェック済みに戻す（一括リセットの取り消し）
  * @param itemIds - チェック済みに戻す持ち物のID
  * @param onProgress - 進捗の通知先
@@ -318,7 +409,7 @@ export const restoreCheckedItems = async (
   );
 
 /**
- * 削除した持ち物を同じ内容（チェック状態・タグ・表示順を含む）で作り直す。IDは新しくなる
+ * 削除した持ち物を同じ内容（チェック状態・タグ・表示順・非表示を含む）で作り直す。IDは新しくなる
  *
  * 削除後に所属カテゴリが消えていれば表示順で先頭のカテゴリへ入れ、消えたタグは外して作り直す。
  * @param deletedItems - 削除した持ち物
@@ -351,6 +442,7 @@ export const restoreItems = async (
         tagIds: getItemTagIds(item).filter((tagId) => tagIds.has(tagId)),
         isChecked: item.isChecked,
         sortOrder: item.sortOrder,
+        isHidden: item.isHidden,
       }),
     createProgressTicker(deletedItems.length, onProgress),
   );

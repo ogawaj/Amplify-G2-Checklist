@@ -1,7 +1,5 @@
 /** チェックリスト詳細画面で下から出すシートの種類（持ち物の編集シートを除く） */
 export const DETAIL_SHEET = {
-  MENU: "MENU",
-  RENAME: "RENAME",
   CATEGORIES: "CATEGORIES",
   TAGS: "TAGS",
   BULK_TAGS: "BULK_TAGS",

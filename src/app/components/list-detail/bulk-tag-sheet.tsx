@@ -6,27 +6,27 @@ import { TextButton } from "@/src/app/components/common/text-button";
 import type { Tag } from "@/src/app/models/tag";
 
 /**
- * 選んだ持ち物にまとめて行き先を付け外しするシート
+ * 選んだ持ち物にまとめてタグを付け外しするシート
  * @param props - プロパティ
- * @returns 一括行き先シート
+ * @returns 一括タグシート
  */
 export function BulkTagSheet(props: {
   /** 選択中の件数 */
   selectedCount: number;
   /** 操作を受け付けない状態か（処理中） */
   isDisabled: boolean;
-  /** 選べる行き先 */
+  /** 選べるタグ */
   tags: Tag[];
-  /** 選択中のすべての持ち物に付いている行き先か */
+  /** 選択中のすべての持ち物に付いているタグか */
   isAttachedToAll: (tagId: string) => boolean;
-  /** 行き先の付け外し（全件に付いていれば外し、でなければ付ける） */
+  /** タグの付け外し（全件に付いていれば外し、でなければ付ける） */
   onToggle: (tag: Tag) => void;
   /** 閉じる */
   onClose: () => void;
 }) {
   return (
     <BottomSheet
-      title={`行き先を付ける（${props.selectedCount}件）`}
+      title={`タグを付ける（${props.selectedCount}件）`}
       action={
         <TextButton isStrong onClick={props.onClose}>
           完了

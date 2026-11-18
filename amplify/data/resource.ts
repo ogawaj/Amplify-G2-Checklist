@@ -6,6 +6,12 @@ const schema = a.schema({
     .model({
       name: a.string().required(),
       durationDays: a.integer().required().default(1),
+      /** 準備モードの絞り込みで選択を外したタグのID。既存データに値がないため任意とし、未設定は空として扱う */
+      hiddenTagIds: a.id().required().array(),
+      /** 準備モードの絞り込みでタグなしの持ち物を外しているか。未設定は false として扱う */
+      isUntaggedHidden: a.boolean(),
+      /** 一覧での表示順。既存データに値がないため任意とし、未設定は作成日時順で末尾に並べる */
+      sortOrder: a.integer(),
     })
     .authorization((allow) => [allow.owner()]),
 
@@ -26,6 +32,8 @@ const schema = a.schema({
     .model({
       checkListId: a.id().required(),
       name: a.string().required(),
+      /** 表示順。既存データに値がないため任意とし、未設定は作成日時順で末尾に並べる */
+      sortOrder: a.integer(),
     })
     .secondaryIndexes((index) => [
       index("checkListId").queryField("listTagsByCheckListId"),
@@ -43,6 +51,8 @@ const schema = a.schema({
       tagIds: a.id().required().array(),
       /** カテゴリ内の表示順。既存データに値がないため任意とし、未設定は作成日時順で末尾に並べる */
       sortOrder: a.integer(),
+      /** 準備モードで表示しないか。既存データに値がないため任意とし、未設定は false として扱う */
+      isHidden: a.boolean(),
     })
     .secondaryIndexes((index) => [
       index("checkListId").queryField("listItemsByCheckListId"),

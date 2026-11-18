@@ -1,7 +1,5 @@
 import type { CategoryDeleteBlocker } from "@/src/app/enums/category-delete-blocker";
 import { CATEGORY_DELETE_BLOCKER } from "@/src/app/enums/category-delete-blocker";
-import type { CategoryMoveDirection } from "@/src/app/enums/category-move-direction";
-import { CATEGORY_MOVE_DIRECTION } from "@/src/app/enums/category-move-direction";
 import type { Category } from "@/src/app/models/category";
 import type { Item } from "@/src/app/models/item";
 import { UserFacingError } from "@/src/app/models/user-facing-error";
@@ -12,6 +10,11 @@ import {
   updateCategory as updateCategoryRecord,
 } from "@/src/app/repositories/category-repository";
 import { isNameTaken } from "@/src/app/utils/name-utils";
+import {
+  assignSequentialOrder,
+  moveToPosition,
+  saveSequentialOrder,
+} from "@/src/app/utils/sort-utils";
 
 /**
  * カテゴリを表示順の昇順に並べる
@@ -78,36 +81,41 @@ export const renameCategory = async (
 };
 
 /**
- * カテゴリを1つ上または下に移動し、表示順を保存する
+ * カテゴリを別のカテゴリの位置へ動かしたときの並びを求める（保存はしない。並び方は {@link moveToPosition} のとおり）
  * @param categories - チェックリストの全カテゴリ
- * @param categoryId - 移動するカテゴリID
- * @param direction - 移動方向
- * @returns 移動後の全カテゴリ（表示順は 0 からの連番に振り直される）。端で動かせない場合は入力を表示順に並べたもの
- * @throws {Error} 対象のカテゴリが存在しない場合
+ * @param categoryId - 動かすカテゴリID
+ * @param targetCategoryId - 移動先にあるカテゴリID
+ * @returns 移動後の全カテゴリ（表示順は0からの連番に振り直す）
+ * @throws {Error} どちらかのカテゴリが存在しない場合
+ */
+export const planCategoryMove = (
+  categories: readonly Category[],
+  categoryId: string,
+  targetCategoryId: string,
+): Category[] =>
+  assignSequentialOrder(
+    moveToPosition(sortCategories(categories), categoryId, targetCategoryId),
+  );
+
+/**
+ * カテゴリを別のカテゴリの位置へ動かし、表示順を保存する（{@link planCategoryMove} の並びにする）
+ * @param categories - チェックリストの全カテゴリ
+ * @param categoryId - 動かすカテゴリID
+ * @param targetCategoryId - 移動先にあるカテゴリID
+ * @returns 移動後の全カテゴリ（表示順は0からの連番に振り直す）
+ * @throws {Error} どちらかのカテゴリが存在しない場合
+ * @throws {unknown} 表示順の書き込みに失敗した場合（{@link saveSequentialOrder}。一部だけ書き込まれていることがある）
  */
 export const moveCategory = async (
   categories: readonly Category[],
   categoryId: string,
-  direction: CategoryMoveDirection,
-): Promise<Category[]> => {
-  const sorted = sortCategories(categories);
-  const from = sorted.findIndex((category) => category.id === categoryId);
-  if (from === -1) {
-    throw new Error(`カテゴリが見つかりません: ${categoryId}`);
-  }
-  const to = direction === CATEGORY_MOVE_DIRECTION.UP ? from - 1 : from + 1;
-  if (to < 0 || to >= sorted.length) return sorted;
-
-  const reordered = [...sorted];
-  [reordered[from], reordered[to]] = [reordered[to], reordered[from]];
-  return await Promise.all(
-    reordered.map((category, sortOrder) =>
-      category.sortOrder === sortOrder
-        ? category
-        : updateCategoryRecord({ id: category.id, sortOrder }),
-    ),
+  targetCategoryId: string,
+): Promise<Category[]> =>
+  await saveSequentialOrder(
+    planCategoryMove(categories, categoryId, targetCategoryId),
+    categories,
+    updateCategoryRecord,
   );
-};
 
 const CATEGORY_DELETE_BLOCKER_MESSAGE: Record<CategoryDeleteBlocker, string> = {
   [CATEGORY_DELETE_BLOCKER.HAS_ITEMS]:

@@ -31,7 +31,7 @@ function SheetField(props: {
 }
 
 /**
- * 持ち物の編集シート（名前・必要数・カテゴリ・行き先・並び順・削除）
+ * 持ち物の編集シート（名前・必要数・カテゴリ・タグ・非表示・並び順・削除）
  * @param props - プロパティ
  * @returns 編集シート
  */
@@ -40,10 +40,12 @@ export function ItemEditSheet(props: {
   item: Item;
   /** 選べるカテゴリ（表示順） */
   categories: Category[];
-  /** 選べる行き先 */
+  /** 選べるタグ */
   tags: Tag[];
-  /** 付いている行き先のID */
+  /** 付いているタグのID */
   attachedTagIds: string[];
+  /** 非表示（準備モードで表示しない）か */
+  isHidden: boolean;
   /** 操作を受け付けない状態か（処理中） */
   isDisabled: boolean;
   /** カテゴリ内で先頭か */
@@ -56,8 +58,10 @@ export function ItemEditSheet(props: {
   onChangeQuantity: (text: string) => Promise<boolean>;
   /** カテゴリの変更 */
   onMoveToCategory: (category: Category) => void;
-  /** 行き先の付け外し */
+  /** タグの付け外し */
   onToggleTag: (tagId: string) => void;
+  /** 非表示の切り替え */
+  onToggleHidden: () => void;
   /** 同じカテゴリ内で1つ上または下へ動かす */
   onReorder: (delta: -1 | 1) => void;
   /** 削除する */
@@ -116,7 +120,7 @@ export function ItemEditSheet(props: {
             ))}
           </div>
         </SheetField>
-        <SheetField label="行き先">
+        <SheetField label="タグ">
           <div className="flex flex-wrap gap-2">
             {props.tags.map((tag) => {
               const isOn = props.attachedTagIds.includes(tag.id);
@@ -132,6 +136,18 @@ export function ItemEditSheet(props: {
                 </Chip>
               );
             })}
+          </div>
+        </SheetField>
+        <SheetField label="準備モード">
+          <div className="flex flex-wrap gap-2">
+            <Chip
+              isOn={props.isHidden}
+              isDisabled={props.isDisabled}
+              onClick={props.onToggleHidden}
+            >
+              {props.isHidden && <Check className="size-3.5" strokeWidth={3} />}
+              非表示
+            </Chip>
           </div>
         </SheetField>
         <SheetField label="並び順">

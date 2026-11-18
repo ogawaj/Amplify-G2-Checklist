@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import type { useDetailFeedback } from "@/src/app/hooks/use-detail-feedback";
-import type { useTagFilter } from "@/src/app/hooks/use-tag-filter";
 import type { BlockedDeletion } from "@/src/app/models/blocked-deletion";
 import type { CheckListDetail } from "@/src/app/models/check-list-detail";
 import type { Tag } from "@/src/app/models/tag";
@@ -12,32 +11,33 @@ import {
   canDeleteTag,
   createTag,
   deleteTag,
+  moveTag,
+  planTagMove,
   renameTag,
   restoreTag,
+  sortTags,
 } from "@/src/app/services/tag-service";
 
 /**
- * タグ（行き先）管理シートの状態（追加・改名・取り消し付きの削除）を管理するフック
+ * タグ管理シートの状態（追加・改名・並べ替え・取り消し付きの削除）を管理するフック
  * @param detail - 読み込み済みのチェックリスト詳細
  * @param feedback - 操作の結果を伝える仕組み
- * @param tagFilter - 絞り込みに使うタグの選択状態（削除・取り消しに追従させる）
- * @returns タグと各操作
+ * @returns 表示順のタグと各操作
  */
 export const useTag = (
   detail: CheckListDetail,
   feedback: ReturnType<typeof useDetailFeedback>,
-  tagFilter: ReturnType<typeof useTagFilter>,
 ) => {
   const { checkList, tags, items, setTags } = detail;
   const { run, notify, notifyUndoable } = feedback;
-  const { selectedTagIds, replaceTags } = tagFilter;
   const [blocked, setBlocked] = useState<BlockedDeletion | null>(null);
+  const sortedTags = useMemo(() => sortTags(tags), [tags]);
 
   const add = async (name: string): Promise<boolean> =>
     await run(async () => {
       const created = await createTag(checkList.id, name, tags);
       setTags((current) => [...current, created]);
-    }, "行き先を追加できませんでした");
+    }, "タグを追加できませんでした");
 
   const rename = async (tag: Tag, name: string): Promise<boolean> => {
     setTags((current) =>
@@ -54,18 +54,18 @@ export const useTag = (
     return isSaved;
   };
 
-  const undoRemove = async (
-    deleted: Tag,
-    previousSelectedTagIds: string[],
-  ): Promise<void> => {
+  const move = async (tagId: string, targetTagId: string): Promise<void> => {
+    setTags(planTagMove(tags, tagId, targetTagId));
+    const isMoved = await run(async () => {
+      setTags(await moveTag(tags, tagId, targetTagId));
+    }, "並び順を変更できませんでした");
+    if (!isMoved && !(await detail.reload())) setTags(tags);
+  };
+
+  const undoRemove = async (deleted: Tag): Promise<void> => {
     await run(async () => {
       const restored = await restoreTag(deleted);
       setTags((current) => [...current, restored]);
-      replaceTags(
-        previousSelectedTagIds.map((id) =>
-          id === deleted.id ? restored.id : id,
-        ),
-      );
     }, "元に戻せませんでした");
   };
 
@@ -80,25 +80,24 @@ export const useTag = (
       });
       return;
     }
-    const previousSelectedTagIds = selectedTagIds;
     const isDeleted = await run(async () => {
       await deleteTag(tag.id, items);
       setTags((current) => current.filter((t) => t.id !== tag.id));
-      replaceTags((current) => current.filter((id) => id !== tag.id));
-    }, "行き先を削除できませんでした");
+    }, "タグを削除できませんでした");
     if (isDeleted) {
       notifyUndoable(
         `「${tag.name}」を削除しました`,
-        () => void undoRemove(tag, previousSelectedTagIds),
+        () => void undoRemove(tag),
       );
     }
   };
 
   return {
-    tags,
+    sortedTags,
     blocked,
     add,
     rename,
+    move,
     remove,
     closeBlocked: () => setBlocked(null),
   };

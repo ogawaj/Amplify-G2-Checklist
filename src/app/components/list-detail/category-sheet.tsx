@@ -1,24 +1,18 @@
-import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 
 import { AddField } from "@/src/app/components/common/add-field";
 import { BlockedReason } from "@/src/app/components/common/blocked-reason";
 import { BottomSheet } from "@/src/app/components/common/bottom-sheet";
 import { IconButton } from "@/src/app/components/common/icon-button";
 import { InlineText } from "@/src/app/components/common/inline-text";
+import { SortableList } from "@/src/app/components/common/sortable-list";
+import { SortableRow } from "@/src/app/components/common/sortable-row";
 import { TextButton } from "@/src/app/components/common/text-button";
-import {
-  CATEGORY_MOVE_DIRECTION,
-  type CategoryMoveDirection,
-} from "@/src/app/enums/category-move-direction";
 import type { BlockedDeletion } from "@/src/app/models/blocked-deletion";
 import type { Category } from "@/src/app/models/category";
 
-/** 並び順を動かす矢印ボタンのクラス */
-const ARROW_BUTTON_CLASS =
-  "grid h-11 w-8 place-items-center text-icon active:opacity-50 disabled:opacity-25";
-
 /**
- * カテゴリの管理シート（追加・名前変更・並べ替え・削除）
+ * カテゴリの管理シート（追加・名前変更・ドラッグでの並べ替え・削除）
  * @param props - プロパティ
  * @returns カテゴリ管理シート
  */
@@ -31,8 +25,8 @@ export function CategorySheet(props: {
   isDisabled: boolean;
   /** 名前の確定。保存に成功したら true を返す */
   onRename: (category: Category, name: string) => Promise<boolean>;
-  /** 1つ上または下へ動かす */
-  onMove: (category: Category, direction: CategoryMoveDirection) => void;
+  /** カテゴリを別のカテゴリの位置へ動かす */
+  onMove: (categoryId: string, targetCategoryId: string) => void;
   /** 削除する */
   onRemove: (category: Category) => void;
   /** 追加する。保存に成功したら true を返す */
@@ -42,7 +36,6 @@ export function CategorySheet(props: {
   /** 閉じる */
   onClose: () => void;
 }) {
-  const lastIndex = props.categories.length - 1;
   return (
     <BottomSheet
       title="カテゴリ"
@@ -54,54 +47,42 @@ export function CategorySheet(props: {
       onClose={props.onClose}
     >
       <div className="flex flex-col">
-        {props.categories.map((category, index) => (
-          <div key={category.id}>
-            <div className="flex items-center">
-              <span className="flex shrink-0">
-                <button
-                  type="button"
-                  aria-label={`${category.name}を1つ上へ`}
-                  disabled={props.isDisabled || index === 0}
-                  className={ARROW_BUTTON_CLASS}
-                  onClick={() =>
-                    props.onMove(category, CATEGORY_MOVE_DIRECTION.UP)
-                  }
-                >
-                  <ChevronUp className="size-5" />
-                </button>
-                <button
-                  type="button"
-                  aria-label={`${category.name}を1つ下へ`}
-                  disabled={props.isDisabled || index === lastIndex}
-                  className={ARROW_BUTTON_CLASS}
-                  onClick={() =>
-                    props.onMove(category, CATEGORY_MOVE_DIRECTION.DOWN)
-                  }
-                >
-                  <ChevronDown className="size-5" />
-                </button>
-              </span>
-              <InlineText
-                value={category.name}
-                ariaLabel="カテゴリ名"
-                appearance="bare"
-                onCommit={(name) => props.onRename(category, name)}
-              />
-              <IconButton
-                label={`${category.name}を削除`}
-                isDisabled={props.isDisabled}
-                onClick={() => props.onRemove(category)}
-              >
-                <Trash2 />
-              </IconButton>
-            </div>
-            {props.blocked?.targetId === category.id && (
-              <BlockedReason onClose={props.onCloseBlocked}>
-                {props.blocked.message}
-              </BlockedReason>
-            )}
-          </div>
-        ))}
+        <SortableList items={props.categories} onMove={props.onMove}>
+          {props.categories.map((category) => (
+            <SortableRow
+              key={category.id}
+              id={category.id}
+              name={category.name}
+              isDisabled={props.isDisabled}
+            >
+              {(handle) => (
+                <>
+                  <div className="flex items-center">
+                    {handle}
+                    <InlineText
+                      value={category.name}
+                      ariaLabel="カテゴリ名"
+                      appearance="bare"
+                      onCommit={(name) => props.onRename(category, name)}
+                    />
+                    <IconButton
+                      label={`${category.name}を削除`}
+                      isDisabled={props.isDisabled}
+                      onClick={() => props.onRemove(category)}
+                    >
+                      <Trash2 />
+                    </IconButton>
+                  </div>
+                  {props.blocked?.targetId === category.id && (
+                    <BlockedReason onClose={props.onCloseBlocked}>
+                      {props.blocked.message}
+                    </BlockedReason>
+                  )}
+                </>
+              )}
+            </SortableRow>
+          ))}
+        </SortableList>
         <div className="pl-2">
           <AddField label="カテゴリを追加" onCommit={props.onAdd} />
         </div>

@@ -10,11 +10,13 @@ import {
   deleteCheckList,
   duplicateCheckList,
   listCheckLists,
+  moveCheckList,
+  planCheckListMove,
   renameCheckList,
 } from "@/src/app/services/check-list-service";
 
 /**
- * チェックリスト一覧の取得と、作成・改名・複製・削除を管理するフック
+ * チェックリスト一覧の取得と、作成・改名・複製・並べ替え・削除を管理するフック
  * @returns 一覧・読み込み状態・進捗・各操作
  */
 export const useCheckLists = () => {
@@ -62,7 +64,7 @@ export const useCheckLists = () => {
 
   const create = async (name: string): Promise<boolean> =>
     await run(async () => {
-      const created = await createCheckList(name);
+      const created = await createCheckList(name, checkLists);
       setCheckLists((current) => [...current, created]);
     }, "チェックリストを作成できませんでした");
 
@@ -76,7 +78,11 @@ export const useCheckLists = () => {
 
   const duplicate = async (id: string): Promise<boolean> => {
     const isSucceeded = await run(async () => {
-      const { checkList, result } = await duplicateCheckList(id, setProgress);
+      const { checkList, result } = await duplicateCheckList(
+        id,
+        checkLists,
+        setProgress,
+      );
       setCheckLists((current) => [...current, checkList]);
       if (result.failureCount > 0) {
         reportError(
@@ -86,6 +92,14 @@ export const useCheckLists = () => {
     }, "複製できませんでした");
     setProgress(null);
     return isSucceeded;
+  };
+
+  const move = async (id: string, targetId: string): Promise<void> => {
+    setCheckLists(planCheckListMove(checkLists, id, targetId));
+    const isMoved = await run(async () => {
+      setCheckLists(await moveCheckList(checkLists, id, targetId));
+    }, "並び順を変更できませんでした");
+    if (!isMoved && !(await reload())) setCheckLists(checkLists);
   };
 
   const remove = async (id: string): Promise<boolean> => {
@@ -117,6 +131,7 @@ export const useCheckLists = () => {
     create,
     rename,
     duplicate,
+    move,
     remove,
   };
 };

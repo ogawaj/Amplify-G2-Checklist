@@ -1,6 +1,8 @@
 import { CHECK_LIST_LIMIT } from "@/src/app/enums/check-list-limit";
 import type { BulkProgress, BulkResult } from "@/src/app/models/bulk-result";
 import type { CheckList } from "@/src/app/models/check-list";
+import type { Tag } from "@/src/app/models/tag";
+import type { TagVisibility } from "@/src/app/models/tag-visibility";
 import { UserFacingError } from "@/src/app/models/user-facing-error";
 import {
   createCategory,
@@ -26,7 +28,14 @@ import {
   toBulkResult,
 } from "@/src/app/services/concurrency-service";
 import { createItem, getItemTagIds } from "@/src/app/services/item-service";
-import { compareByCreatedAt } from "@/src/app/utils/sort-utils";
+import { listTags as listSortedTags } from "@/src/app/services/tag-service";
+import {
+  assignSequentialOrder,
+  compareBySortOrder,
+  moveToPosition,
+  nextSortOrder,
+  saveSequentialOrder,
+} from "@/src/app/utils/sort-utils";
 
 /** 新規作成時に用意する既定カテゴリの名称 */
 const DEFAULT_CATEGORY_NAME = "未分類";
@@ -38,11 +47,19 @@ const DUPLICATE_NAME_SUFFIX = "のコピー";
 const DURATION_DAYS_RANGE_MESSAGE = `日数は${CHECK_LIST_LIMIT.DURATION_DAYS_MIN}〜${CHECK_LIST_LIMIT.DURATION_DAYS_MAX}の整数で指定してください`;
 
 /**
- * 所有者のチェックリストを作成日時の昇順で取得する
+ * チェックリストを表示順に並べる（{@link compareBySortOrder} の順）
+ * @param checkLists - チェックリスト
+ * @returns 表示順に並べたチェックリスト（新しい配列）
+ */
+const sortCheckLists = (checkLists: readonly CheckList[]): CheckList[] =>
+  [...checkLists].sort(compareBySortOrder);
+
+/**
+ * 所有者のチェックリストを表示順で取得する（{@link compareBySortOrder} の順）
  * @returns チェックリスト一覧
  */
 export const listCheckLists = async (): Promise<CheckList[]> => {
-  return (await listCheckListRecords()).sort(compareByCreatedAt);
+  return sortCheckLists(await listCheckListRecords());
 };
 
 /**
@@ -55,16 +72,21 @@ export const getCheckList = async (id: string): Promise<CheckList | null> => {
 };
 
 /**
- * 日数1のチェックリストを、既定カテゴリ付きで作成する。
+ * 日数1のチェックリストを、既定カテゴリ付きで一覧の末尾に作成する（表示順は {@link nextSortOrder} で決める）。
  * 既定カテゴリの作成に失敗した場合は作成済みの本体の削除を試み（削除の失敗は無視する）、カテゴリ作成時のエラーを投げる
  * @param name - チェックリスト名
+ * @param checkLists - 既存のチェックリスト
  * @returns 作成したチェックリスト
  * @throws {unknown} 本体または既定カテゴリの作成に失敗した場合（既定カテゴリの失敗時は元のエラー）
  */
-export const createCheckList = async (name: string): Promise<CheckList> => {
+export const createCheckList = async (
+  name: string,
+  checkLists: readonly Pick<CheckList, "sortOrder">[],
+): Promise<CheckList> => {
   const checkList = await createCheckListRecord({
     name: name.trim(),
     durationDays: CHECK_LIST_LIMIT.DURATION_DAYS_MIN,
+    sortOrder: nextSortOrder(checkLists),
   });
   try {
     await createCategory({
@@ -114,11 +136,97 @@ export const updateDurationDays = async (
 };
 
 /**
- * チェックリストをカテゴリ・タグ・持ち物ごと複製する。複製した持ち物はすべて未チェックになる
+ * チェックリストを別のチェックリストの位置へ動かしたときの並びを求める（保存はしない。並び方は {@link moveToPosition} のとおり）
+ * @param checkLists - 全チェックリスト
+ * @param checkListId - 動かすチェックリストID
+ * @param targetCheckListId - 移動先にあるチェックリストID
+ * @returns 移動後の全チェックリスト（表示順は0からの連番に振り直す）
+ * @throws {Error} どちらかのチェックリストが存在しない場合
+ */
+export const planCheckListMove = (
+  checkLists: readonly CheckList[],
+  checkListId: string,
+  targetCheckListId: string,
+): (CheckList & { sortOrder: number })[] =>
+  assignSequentialOrder(
+    moveToPosition(sortCheckLists(checkLists), checkListId, targetCheckListId),
+  );
+
+/**
+ * チェックリストを別のチェックリストの位置へ動かし、表示順を保存する（{@link planCheckListMove} の並びにする）
+ * @param checkLists - 全チェックリスト
+ * @param checkListId - 動かすチェックリストID
+ * @param targetCheckListId - 移動先にあるチェックリストID
+ * @returns 移動後の全チェックリスト（表示順は0からの連番に振り直す）
+ * @throws {Error} どちらかのチェックリストが存在しない場合
+ * @throws {unknown} 表示順の書き込みに失敗した場合（{@link saveSequentialOrder}。一部だけ書き込まれていることがある）
+ */
+export const moveCheckList = async (
+  checkLists: readonly CheckList[],
+  checkListId: string,
+  targetCheckListId: string,
+): Promise<CheckList[]> =>
+  await saveSequentialOrder(
+    planCheckListMove(checkLists, checkListId, targetCheckListId),
+    checkLists,
+    updateCheckList,
+  );
+
+/**
+ * チェックリストに保存された絞り込みの状態を取り出す。未設定の項目はすべて表示（外したものなし）として扱う
+ * @param checkList - チェックリスト
+ * @returns 表示から外しているタグ
+ */
+export const getTagVisibility = (
+  checkList: Pick<CheckList, "hiddenTagIds" | "isUntaggedHidden">,
+): TagVisibility => ({
+  hiddenTagIds: checkList.hiddenTagIds ?? [],
+  isUntaggedHidden: checkList.isUntaggedHidden ?? false,
+});
+
+/**
+ * 絞り込みの状態から、存在しないタグ（削除済み）のIDを除く
+ * @param visibility - 表示から外しているタグ
+ * @param tags - チェックリストに存在するタグ
+ * @returns 存在するタグのIDだけを残した状態
+ */
+export const pruneTagVisibility = (
+  visibility: TagVisibility,
+  tags: readonly Pick<Tag, "id">[],
+): TagVisibility => {
+  const tagIds = new Set(tags.map((tag) => tag.id));
+  return {
+    ...visibility,
+    hiddenTagIds: visibility.hiddenTagIds.filter((id) => tagIds.has(id)),
+  };
+};
+
+/**
+ * チェックリストに絞り込みの状態を保存する
+ * @param id - チェックリストID
+ * @param visibility - 表示から外しているタグ
+ * @returns 更新後のチェックリスト
+ */
+export const updateTagVisibility = async (
+  id: string,
+  visibility: TagVisibility,
+): Promise<CheckList> => {
+  return await updateCheckList({
+    id,
+    hiddenTagIds: [...visibility.hiddenTagIds],
+    isUntaggedHidden: visibility.isUntaggedHidden,
+  });
+};
+
+/**
+ * チェックリストをカテゴリ・タグ・持ち物ごと複製する。複製した持ち物はすべて未チェックになり、絞り込みはすべて表示の状態になる。
+ * タグの表示順は0からの連番にそろえて引き継ぐ。
  *
  * 新しいチェックリストの作成、カテゴリ・タグの作成、持ち物の作成を順に行い、各段階内は並列に実行する。
  * 一部の作成が失敗しても成功分は残る。失敗したカテゴリ・タグに依存する持ち物は失敗として数える。
+ * 複製したチェックリストは一覧の末尾に置く（表示順は {@link nextSortOrder} で決める）。
  * @param sourceId - 複製元のチェックリストID
+ * @param checkLists - 既存のチェックリスト
  * @param onProgress - 進捗の通知先（総件数はカテゴリ・タグ・持ち物の合計）
  * @returns 作成したチェックリストと、配下の複製結果
  * @throws {Error} 複製元が存在しない場合
@@ -126,12 +234,13 @@ export const updateDurationDays = async (
  */
 export const duplicateCheckList = async (
   sourceId: string,
+  checkLists: readonly Pick<CheckList, "sortOrder">[],
   onProgress?: (progress: BulkProgress) => void,
 ): Promise<{ checkList: CheckList; result: BulkResult }> => {
   const [source, categories, tags, items] = await Promise.all([
     getCheckListById(sourceId),
     listCategories(sourceId),
-    listTags(sourceId),
+    listSortedTags(sourceId),
     listItems(sourceId),
   ]);
   if (!source) {
@@ -141,6 +250,7 @@ export const duplicateCheckList = async (
   const checkList = await createCheckListRecord({
     name: `${source.name}${DUPLICATE_NAME_SUFFIX}`,
     durationDays: source.durationDays,
+    sortOrder: nextSortOrder(checkLists),
   });
 
   const tick = createProgressTicker(
@@ -156,7 +266,8 @@ export const duplicateCheckList = async (
       }),
   );
   const tagWrites = tags.map(
-    (tag) => () => createTag({ checkListId: checkList.id, name: tag.name }),
+    (tag, sortOrder) => () =>
+      createTag({ checkListId: checkList.id, name: tag.name, sortOrder }),
   );
   const parentResults = await mapConcurrently(
     [...categoryWrites, ...tagWrites],
@@ -194,6 +305,7 @@ export const duplicateCheckList = async (
         quantityPerDay: item.quantityPerDay ?? undefined,
         tagIds: tagIds.filter((tagId): tagId is string => tagId !== undefined),
         sortOrder: item.sortOrder,
+        isHidden: item.isHidden,
       });
     },
     tick,

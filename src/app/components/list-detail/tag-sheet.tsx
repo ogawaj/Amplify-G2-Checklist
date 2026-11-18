@@ -5,24 +5,28 @@ import { BlockedReason } from "@/src/app/components/common/blocked-reason";
 import { BottomSheet } from "@/src/app/components/common/bottom-sheet";
 import { IconButton } from "@/src/app/components/common/icon-button";
 import { InlineText } from "@/src/app/components/common/inline-text";
+import { SortableList } from "@/src/app/components/common/sortable-list";
+import { SortableRow } from "@/src/app/components/common/sortable-row";
 import { TextButton } from "@/src/app/components/common/text-button";
 import type { BlockedDeletion } from "@/src/app/models/blocked-deletion";
 import type { Tag } from "@/src/app/models/tag";
 
 /**
- * 行き先（タグ）の管理シート（追加・名前変更・削除）
+ * タグの管理シート（追加・名前変更・ドラッグでの並べ替え・削除）
  * @param props - プロパティ
- * @returns 行き先管理シート
+ * @returns タグ管理シート
  */
 export function TagSheet(props: {
-  /** 行き先 */
+  /** タグ（表示順） */
   tags: Tag[];
-  /** 削除できなかった行き先とその理由 */
+  /** 削除できなかったタグとその理由 */
   blocked: BlockedDeletion | null;
   /** 操作を受け付けない状態か（処理中） */
   isDisabled: boolean;
   /** 名前の確定。保存に成功したら true を返す */
   onRename: (tag: Tag, name: string) => Promise<boolean>;
+  /** タグを別のタグの位置へ動かす */
+  onMove: (tagId: string, targetTagId: string) => void;
   /** 削除する */
   onRemove: (tag: Tag) => void;
   /** 追加する。保存に成功したら true を返す */
@@ -34,7 +38,7 @@ export function TagSheet(props: {
 }) {
   return (
     <BottomSheet
-      title="行き先"
+      title="タグ"
       action={
         <TextButton isStrong onClick={props.onClose}>
           完了
@@ -43,31 +47,45 @@ export function TagSheet(props: {
       onClose={props.onClose}
     >
       <div className="flex flex-col">
-        {props.tags.map((tag) => (
-          <div key={tag.id}>
-            <div className="flex items-center">
-              <InlineText
-                value={tag.name}
-                ariaLabel="行き先の名前"
-                appearance="bare"
-                onCommit={(name) => props.onRename(tag, name)}
-              />
-              <IconButton
-                label={`${tag.name}を削除`}
-                isDisabled={props.isDisabled}
-                onClick={() => props.onRemove(tag)}
-              >
-                <Trash2 />
-              </IconButton>
-            </div>
-            {props.blocked?.targetId === tag.id && (
-              <BlockedReason onClose={props.onCloseBlocked}>
-                {props.blocked.message}
-              </BlockedReason>
-            )}
-          </div>
-        ))}
-        <AddField label="行き先を追加" onCommit={props.onAdd} />
+        <SortableList items={props.tags} onMove={props.onMove}>
+          {props.tags.map((tag) => (
+            <SortableRow
+              key={tag.id}
+              id={tag.id}
+              name={tag.name}
+              isDisabled={props.isDisabled}
+            >
+              {(handle) => (
+                <>
+                  <div className="flex items-center">
+                    {handle}
+                    <InlineText
+                      value={tag.name}
+                      ariaLabel="タグの名前"
+                      appearance="bare"
+                      onCommit={(name) => props.onRename(tag, name)}
+                    />
+                    <IconButton
+                      label={`${tag.name}を削除`}
+                      isDisabled={props.isDisabled}
+                      onClick={() => props.onRemove(tag)}
+                    >
+                      <Trash2 />
+                    </IconButton>
+                  </div>
+                  {props.blocked?.targetId === tag.id && (
+                    <BlockedReason onClose={props.onCloseBlocked}>
+                      {props.blocked.message}
+                    </BlockedReason>
+                  )}
+                </>
+              )}
+            </SortableRow>
+          ))}
+        </SortableList>
+        <div className="pl-2">
+          <AddField label="タグを追加" onCommit={props.onAdd} />
+        </div>
       </div>
     </BottomSheet>
   );

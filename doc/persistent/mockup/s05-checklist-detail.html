@@ -17,7 +17,7 @@
         display: flex;
         align-items: center;
         gap: 0.4rem;
-        height: 44px;
+        height: 52px;
         padding: 0 0.6rem;
         font-size: 0.95rem;
         color: #8a6400;
@@ -27,22 +27,19 @@
       }
       .n .bar .c {
         flex: 1;
-        text-align: center;
-        font-size: 0.72rem;
-        font-weight: 600;
-        color: #6c6c70;
-      }
-      .n h1 {
-        margin: 0.2rem 1.1rem 0.6rem;
-        font-size: 1.55rem;
-      }
-      .n .sub {
-        margin: 0 1.1rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
         font-size: 0.72rem;
         color: #6c6c70;
+      }
+      .n .bar .c b {
+        font-size: 0.95rem;
+        color: #1c1c1e;
       }
       .n .chips {
         display: flex;
+        flex-wrap: wrap;
         gap: 0.4rem;
         align-items: center;
         padding: 0.3rem 1.1rem;
@@ -98,9 +95,6 @@
       .n .r .t {
         font-size: 0.72rem;
         color: #8a6400;
-      }
-      .n .r .t.common {
-        color: #6c6c70;
       }
       .n .ck {
         width: 20px;
@@ -199,47 +193,45 @@
       </ul>
     </div>
 
-    <div class="screen-label">準備モード（「海外」で絞り込み中・日数4日）</div>
+    <div class="screen-label">準備モード（「国内」「帰省」の選択を外した状態・日数4日）</div>
     <div class="phone">
       <div class="statusbar"><span>9:41</span><span>●●● ⌁ ▮</span></div>
       <div class="n">
         <div class="bar">
-          ‹ 一覧<span class="c">海外で絞り込み中・残り5件</span>編集　⋯
+          ‹ 一覧<span class="c"><b>藍君持ち物</b>残り5件</span>編集
         </div>
-        <h1>藍君持ち物</h1>
         <div class="chips">
-          <span style="color: #6c6c70">行き先</span
-          ><span class="chip">すべて</span><span class="chip">国内</span
+          <span class="chip on">✓ タグなし</span><span class="chip">国内</span
           ><span class="chip on">✓ 海外</span><span class="chip">帰省</span>
         </div>
         <div class="days">
           日数 <span class="step">−　4　＋</span
           ><span class="reset"
-            >↺ チェックを外す（10件・隠れている3件を含む）</span
+            >チェックを外す</span
           >
         </div>
         <div class="cat">手荷物</div>
         <div class="r done">
           <span class="ck on"></span
-          ><span class="nm">おむつ<span class="q">×16</span></span
-          ><span class="t common">共通</span>
+          ><span class="nm">おむつ<span class="q">×16</span></span>
         </div>
         <div class="r">
-          <span class="ck"></span><span class="nm">サングラス</span>
+          <span class="ck"></span><span class="nm">サングラス</span
+          ><span class="t">海外</span>
         </div>
         <div class="r">
           <span class="ck"></span
           ><span class="nm">ベビーフード<span class="q">×12</span></span
-          ><span class="t">国内・帰省にも</span>
+          ><span class="t">国内・海外・帰省</span>
         </div>
         <div class="cat">服</div>
         <div class="r done">
           <span class="ck on"></span
-          ><span class="nm">肌着<span class="q">×20</span></span
-          ><span class="t common">共通</span>
+          ><span class="nm">肌着<span class="q">×20</span></span>
         </div>
         <div class="r">
-          <span class="ck"></span><span class="nm">スリッパ</span>
+          <span class="ck"></span><span class="nm">スリッパ</span
+          ><span class="t">海外</span>
         </div>
       </div>
     </div>
@@ -249,11 +241,9 @@
       <div class="statusbar"><span>9:41</span><span>●●● ⌁ ▮</span></div>
       <div class="n">
         <div class="bar tint">
-          すべて選択<span class="c">✎ 編集中</span><b>完了</b>
+          すべて選択<span class="c"><b>藍君持ち物</b>✎ 編集中・19件</span><b>完了</b>
         </div>
-        <div class="sub">19件</div>
-        <h1>藍君持ち物</h1>
-        <div class="mg"><span>📁 カテゴリ</span><span>🏷 行き先</span></div>
+        <div class="mg"><span>📁 カテゴリ</span><span>🏷 タグ</span></div>
         <div class="cat">手荷物</div>
         <div class="r">
           <span class="sq"></span
@@ -272,7 +262,7 @@
         </div>
         <div class="r add">⊕ 手荷物に追加</div>
         <div class="bottom">
-          <span>カテゴリへ移動</span><span>行き先</span
+          <span>カテゴリへ移動</span><span>タグ</span
           ><span class="del">削除</span>
         </div>
         <div class="toast">2件を削除しました<b>元に戻す</b></div>
@@ -297,7 +287,7 @@
           <span class="chip on">手荷物</span><span class="chip">食事</span
           ><span class="chip">服</span><span class="chip">その他</span>
         </div>
-        <p style="color: #6c6c70; margin: 1rem 0 0.3rem">行き先</p>
+        <p style="color: #6c6c70; margin: 1rem 0 0.3rem">タグ</p>
         <div class="chips" style="padding: 0">
           <span class="chip">国内</span><span class="chip on">✓ 海外</span
           ><span class="chip">帰省</span>

@@ -6,20 +6,28 @@ import type { useDetailFeedback } from "@/src/app/hooks/use-detail-feedback";
 import type { Category } from "@/src/app/models/category";
 import type { CheckListDetail } from "@/src/app/models/check-list-detail";
 import type { Item, ItemUpdateInput } from "@/src/app/models/item";
-import type { ItemTagLabel } from "@/src/app/models/item-tag-label";
 import type { Tag } from "@/src/app/models/tag";
-import { groupItemsByCategory } from "@/src/app/services/item-filter-service";
+import type { TagVisibility } from "@/src/app/models/tag-visibility";
+import {
+  filterItemsByTags,
+  groupItemsByCategory,
+} from "@/src/app/services/item-filter-service";
 import {
   appendItem,
   deleteItems,
   getItemTagIds,
+  isItemHidden,
   moveItemOrder,
   moveItemsToCategory,
+  moveItemTo,
+  planItemMove,
   restoreItems,
+  setHiddenOnItems,
   setTagOnItems,
   updateItem,
 } from "@/src/app/services/item-service";
-import { keyBy, mergeById } from "@/src/app/utils/array-utils";
+import { sortTags } from "@/src/app/services/tag-service";
+import { mergeById } from "@/src/app/utils/array-utils";
 import { parseInteger } from "@/src/app/utils/integer-utils";
 import { buildItemTagLabel } from "@/src/app/utils/item-tag-label-utils";
 
@@ -32,14 +40,17 @@ const SAVED_MESSAGE = "保存しました";
 /**
  * 編集モードの状態（選択・追加・項目の編集・並べ替え・一括操作・取り消し付きの削除）を管理するフック
  *
- * 編集モードは絞り込みを使わず、空のカテゴリを含む全件を扱う。
+ * タグの絞り込みに合う持ち物を、空のカテゴリを含めて扱う。編集中に追加した持ち物・タグを変えた持ち物・削除を取り消した持ち物・keepItem で指定した持ち物は、
+ * 絞り込みに合わなくなっても resetKept を呼ぶまで表示し続ける。選択・すべて選択・並べ替えは表示中の持ち物が対象。
  * @param detail - 読み込み済みのチェックリスト詳細
  * @param feedback - 操作の結果を伝える仕組み
+ * @param visibility - 表示から外しているタグ
  * @returns 表示用に整えた持ち物・選択状態と各操作
  */
 export const useItemEdit = (
   detail: CheckListDetail,
   feedback: ReturnType<typeof useDetailFeedback>,
+  visibility: TagVisibility,
 ) => {
   const { checkList, categories, tags, items, setItems } = detail;
   const {
@@ -51,6 +62,7 @@ export const useItemEdit = (
     trackProgress,
   } = feedback;
   const [checkedItemIds, setCheckedItemIds] = useState<string[]>([]);
+  const [keptItemIds, setKeptItemIds] = useState<string[]>([]);
   const [highlightedItemId, setHighlightedItemId] = useState<string | null>(
     null,
   );
@@ -65,11 +77,15 @@ export const useItemEdit = (
     [],
   );
 
-  const groups = useMemo(
-    () => groupItemsByCategory(categories, items, false),
-    [categories, items],
+  const visibleItems = useMemo(
+    () => filterItemsByTags(items, visibility, keptItemIds),
+    [items, visibility, keptItemIds],
   );
-  const tagsById = useMemo(() => keyBy(tags, (tag) => tag.id), [tags]);
+  const groups = useMemo(
+    () => groupItemsByCategory(categories, visibleItems, false),
+    [categories, visibleItems],
+  );
+  const sortedTags = useMemo(() => sortTags(tags), [tags]);
   const selectedItems = useMemo(
     () =>
       groups.flatMap((group) =>
@@ -79,7 +95,7 @@ export const useItemEdit = (
   );
   const selectedItemIds = selectedItems.map((item) => item.id);
   const isAllSelected =
-    items.length > 0 && selectedItems.length === items.length;
+    visibleItems.length > 0 && selectedItems.length === visibleItems.length;
 
   const toggleSelected = (itemId: string) =>
     setCheckedItemIds((current) =>
@@ -89,12 +105,22 @@ export const useItemEdit = (
     );
 
   const toggleAllSelected = () =>
-    setCheckedItemIds(isAllSelected ? [] : items.map((item) => item.id));
+    setCheckedItemIds(isAllSelected ? [] : visibleItems.map((item) => item.id));
 
   const clearSelection = () => setCheckedItemIds([]);
 
-  const getTagLabel = (item: Item): ItemTagLabel | null =>
-    buildItemTagLabel(getItemTagIds(item), tagsById, []);
+  const keepItems = (itemIds: readonly string[]) =>
+    setKeptItemIds((current) => [
+      ...current,
+      ...itemIds.filter((id) => !current.includes(id)),
+    ]);
+
+  const keepItem = (itemId: string) => keepItems([itemId]);
+
+  const resetKept = () => setKeptItemIds([]);
+
+  const getTagLabel = (item: Item): string | null =>
+    buildItemTagLabel(getItemTagIds(item), sortedTags);
 
   const getOrderBounds = (
     item: Item,
@@ -196,17 +222,29 @@ export const useItemEdit = (
     );
   };
 
+  const toggleItemHidden = async (item: Item): Promise<boolean> => {
+    const isHidden = !isItemHidden(item);
+    return await patchItem(
+      item.id,
+      { isHidden },
+      { isHidden: item.isHidden },
+      { id: item.id, isHidden },
+      "非表示を保存できませんでした",
+    );
+  };
+
   const toggleItemTag = async (item: Item, tagId: string): Promise<boolean> => {
     const currentTagIds = getItemTagIds(item);
     const tagIds = currentTagIds.includes(tagId)
       ? currentTagIds.filter((id) => id !== tagId)
       : [...currentTagIds, tagId];
+    keepItems([item.id]);
     return await patchItem(
       item.id,
       { tagIds },
       { tagIds: item.tagIds },
       { id: item.id, tagIds },
-      "行き先を保存できませんでした",
+      "タグを保存できませんでした",
     );
   };
 
@@ -226,10 +264,29 @@ export const useItemEdit = (
 
   const reorderItem = async (item: Item, delta: -1 | 1): Promise<boolean> =>
     await run(async () => {
-      const updated = await moveItemOrder(item.id, items, delta);
+      const updated = await moveItemOrder(
+        item.id,
+        items,
+        delta,
+        visibleItems.map((visible) => visible.id),
+      );
       setItems((current) => mergeById(current, updated));
       notify("並び順を変更しました");
     }, "並び順を変更できませんでした");
+
+  const reorderItemTo = async (
+    itemId: string,
+    targetItemId: string,
+  ): Promise<void> => {
+    setItems((current) =>
+      mergeById(current, planItemMove(items, itemId, targetItemId)),
+    );
+    const isSaved = await run(async () => {
+      const saved = await moveItemTo(items, itemId, targetItemId);
+      setItems((current) => mergeById(current, saved));
+    }, "並び順を変更できませんでした");
+    if (!isSaved && !(await detail.reload())) setItems(items);
+  };
 
   const addItem = async (categoryId: string, name: string): Promise<boolean> =>
     await run(async () => {
@@ -238,6 +295,7 @@ export const useItemEdit = (
         items,
       );
       setItems((current) => [...mergeById(current, reordered), created]);
+      keepItems([created.id]);
       highlightItem(created.id);
     }, "持ち物を追加できませんでした");
 
@@ -252,6 +310,7 @@ export const useItemEdit = (
             onProgress,
           );
           setItems((current) => [...current, ...values]);
+          keepItems(values.map((item) => item.id));
           await reportBulkFailure(
             result.failureCount,
             `${result.failureCount}件を元に戻せませんでした`,
@@ -316,6 +375,35 @@ export const useItemEdit = (
     );
   };
 
+  const isAllSelectedHidden =
+    selectedItems.length > 0 && selectedItems.every(isItemHidden);
+
+  const toggleSelectedHidden = async (): Promise<void> => {
+    const targets = selectedItems;
+    const isHidden = !isAllSelectedHidden;
+    const label = isHidden ? "非表示に" : "表示に";
+    await run(
+      async () =>
+        await trackProgress("非表示を更新中", async (onProgress) => {
+          const { result, values } = await setHiddenOnItems(
+            targets,
+            isHidden,
+            onProgress,
+          );
+          setItems((current) => mergeById(current, values));
+          if (result.failureCount === 0) {
+            notify(`${targets.length}件を${label}しました`);
+            return;
+          }
+          await reportBulkFailure(
+            result.failureCount,
+            `${result.failureCount}件を${label}できませんでした`,
+          );
+        }),
+      "非表示を更新できませんでした",
+    );
+  };
+
   const isTagAttachedToAllSelected = (tagId: string): boolean =>
     selectedItems.length > 0 &&
     selectedItems.every((item) => getItemTagIds(item).includes(tagId));
@@ -325,7 +413,7 @@ export const useItemEdit = (
     const isAttached = !isTagAttachedToAllSelected(tag.id);
     await run(
       async () =>
-        await trackProgress("行き先を更新中", async (onProgress) => {
+        await trackProgress("タグを更新中", async (onProgress) => {
           const { result, values } = await setTagOnItems(
             targets,
             tag.id,
@@ -333,6 +421,7 @@ export const useItemEdit = (
             onProgress,
           );
           setItems((current) => mergeById(current, values));
+          keepItems(values.map((item) => item.id));
           if (result.failureCount === 0) {
             notify(
               `「${tag.name}」を${targets.length}件${isAttached ? "に付けました" : "から外しました"}`,
@@ -341,16 +430,16 @@ export const useItemEdit = (
           }
           await reportBulkFailure(
             result.failureCount,
-            `${result.failureCount}件の行き先を更新できませんでした`,
+            `${result.failureCount}件のタグを更新できませんでした`,
           );
         }),
-      "行き先を更新できませんでした",
+      "タグを更新できませんでした",
     );
   };
 
   return {
     groups,
-    itemCount: items.length,
+    itemCount: visibleItems.length,
     selectedItems,
     selectedItemIds,
     isAllSelected,
@@ -358,18 +447,25 @@ export const useItemEdit = (
     toggleSelected,
     toggleAllSelected,
     clearSelection,
+    keepItem,
+    resetKept,
     getTagLabel,
     getAttachedTagIds: getItemTagIds,
     getOrderBounds,
     renameItem,
     changeQuantity,
     toggleItemTag,
+    toggleItemHidden,
+    isItemHidden,
     moveItem,
     reorderItem,
+    reorderItemTo,
     addItem,
     removeItems,
     moveSelectedToCategory,
     isTagAttachedToAllSelected,
     toggleSelectedTag,
+    isAllSelectedHidden,
+    toggleSelectedHidden,
   };
 };

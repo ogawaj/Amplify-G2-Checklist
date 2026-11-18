@@ -1,10 +1,9 @@
 "use client";
 
-import { Ellipsis, PencilLine } from "lucide-react";
+import { PencilLine } from "lucide-react";
 import { useState } from "react";
 
 import { BulkProgressBar } from "@/src/app/components/common/bulk-progress-bar";
-import { IconButton } from "@/src/app/components/common/icon-button";
 import { TextButton } from "@/src/app/components/common/text-button";
 import { UndoToast } from "@/src/app/components/common/undo-toast";
 import { BulkCategorySheet } from "@/src/app/components/list-detail/bulk-category-sheet";
@@ -13,12 +12,11 @@ import { CategorySheet } from "@/src/app/components/list-detail/category-sheet";
 import { DetailHeader } from "@/src/app/components/list-detail/detail-header";
 import { EditView } from "@/src/app/components/list-detail/edit-view";
 import { ItemEditSheet } from "@/src/app/components/list-detail/item-edit-sheet";
-import { ListMenuSheet } from "@/src/app/components/list-detail/list-menu-sheet";
 import { PrepareView } from "@/src/app/components/list-detail/prepare-view";
-import { RenameSheet } from "@/src/app/components/list-detail/rename-sheet";
 import { SelectionBar } from "@/src/app/components/list-detail/selection-bar";
+import { TagFilterChips } from "@/src/app/components/list-detail/tag-filter-chips";
 import { TagSheet } from "@/src/app/components/list-detail/tag-sheet";
-import { APP_PATH, LIST_SECTION } from "@/src/app/enums/app-path";
+import { APP_PATH } from "@/src/app/enums/app-path";
 import { DETAIL_MODE, type DetailMode } from "@/src/app/enums/detail-mode";
 import { DETAIL_SHEET, type DetailSheet } from "@/src/app/enums/detail-sheet";
 import { useCategory } from "@/src/app/hooks/use-category";
@@ -28,7 +26,6 @@ import { useItemEdit } from "@/src/app/hooks/use-item-edit";
 import { useTag } from "@/src/app/hooks/use-tag";
 import { useTagFilter } from "@/src/app/hooks/use-tag-filter";
 import type { CheckListDetail } from "@/src/app/models/check-list-detail";
-import { buildListPath } from "@/src/app/utils/list-path-utils";
 import { cn } from "@/src/lib/shadcn/utils";
 
 /**
@@ -41,13 +38,13 @@ export function ListDetailBody(props: {
   detail: CheckListDetail;
 }) {
   const { detail } = props;
-  const { checkList, tags, items } = detail;
+  const { checkList, items } = detail;
   const feedback = useDetailFeedback();
-  const tagFilter = useTagFilter();
+  const tagFilter = useTagFilter(detail, feedback);
   const state = useCheckState(detail, feedback, tagFilter);
-  const edit = useItemEdit(detail, feedback);
+  const edit = useItemEdit(detail, feedback, tagFilter.visibility);
   const category = useCategory(detail, feedback);
-  const tag = useTag(detail, feedback, tagFilter);
+  const tag = useTag(detail, feedback);
   const [mode, setMode] = useState<DetailMode>(DETAIL_MODE.PREPARE);
   const [sheet, setSheet] = useState<DetailSheet | null>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
@@ -76,8 +73,24 @@ export function ListDetailBody(props: {
     }
     setMode(DETAIL_MODE.PREPARE);
     edit.clearSelection();
+    edit.resetKept();
     setAutoFocusCategoryId(null);
   };
+
+  const tagFilterChips = (
+    <TagFilterChips
+      tags={tag.sortedTags}
+      visibility={tagFilter.visibility}
+      onToggleTag={(tagId) => {
+        tagFilter.toggleTag(tagId);
+        edit.resetKept();
+      }}
+      onToggleUntagged={() => {
+        tagFilter.toggleUntagged();
+        edit.resetKept();
+      }}
+    />
+  );
 
   const closeSheet = () => setSheet(null);
 
@@ -93,15 +106,10 @@ export function ListDetailBody(props: {
                 {edit.isAllSelected ? "選択を解除" : "すべて選択"}
               </TextButton>
             }
-            center={
-              <span className="inline-flex items-center gap-1 text-[13px] font-semibold text-muted-foreground">
+            subtitle={
+              <span className="inline-flex items-center gap-1 text-[13px] text-muted-foreground tabular-nums">
                 <PencilLine className="size-3.5" />
-                編集中
-              </span>
-            }
-            eyebrow={
-              <span className="text-[13px] text-muted-foreground tabular-nums">
-                {edit.itemCount}件
+                編集中・{edit.itemCount}件
               </span>
             }
             actions={
@@ -114,35 +122,23 @@ export function ListDetailBody(props: {
           <DetailHeader
             title={checkList.name}
             backHref={APP_PATH.LISTS}
-            center={
+            subtitle={
               <button
                 type="button"
                 className={cn(
-                  "truncate text-[13px] font-semibold tabular-nums",
+                  "truncate text-[13px] tabular-nums",
                   state.isAllDone ? "text-brand-text" : "text-muted-foreground",
                 )}
                 onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
               >
-                {state.isFiltered &&
-                  `${state.selectedTagNames.join("・")}で絞り込み中・`}
                 {state.isAllDone ? "準備完了" : `残り${state.remainingCount}件`}
               </button>
             }
-            actions={
-              <>
-                <TextButton onClick={startEditing}>編集</TextButton>
-                <IconButton
-                  label="チェックリストの操作"
-                  onClick={() => setSheet(DETAIL_SHEET.MENU)}
-                >
-                  <Ellipsis className="text-brand-text" />
-                </IconButton>
-              </>
-            }
+            actions={<TextButton onClick={startEditing}>編集</TextButton>}
           />
         )}
 
-        <div className="flex flex-col gap-5 px-5 pt-1 pb-32">
+        <div className="flex flex-col gap-5 px-5 pt-3 pb-32">
           {feedback.bulkProgress && (
             <BulkProgressBar
               label={feedback.bulkProgress.label}
@@ -151,26 +147,30 @@ export function ListDetailBody(props: {
           )}
           {isEditing ? (
             <EditView
+              tagFilter={tagFilterChips}
               groups={edit.groups}
               selectedItemIds={edit.selectedItemIds}
               highlightedItemId={edit.highlightedItemId}
               autoFocusCategoryId={autoFocusCategoryId}
               getTagLabel={edit.getTagLabel}
+              isHidden={edit.isItemHidden}
+              isDisabled={isBusy}
+              onMoveItem={(itemId, targetItemId) =>
+                void edit.reorderItemTo(itemId, targetItemId)
+              }
               onToggleSelected={edit.toggleSelected}
-              onOpenItem={setEditingItemId}
+              onOpenItem={(itemId) => {
+                edit.keepItem(itemId);
+                setEditingItemId(itemId);
+              }}
               onOpenCategories={() => setSheet(DETAIL_SHEET.CATEGORIES)}
               onOpenTags={() => setSheet(DETAIL_SHEET.TAGS)}
               onAddItem={edit.addItem}
             />
           ) : (
             <PrepareView
-              isFiltered={state.isFiltered}
               isDisabled={isBusy}
-              tags={tags}
-              selectedTagIds={tagFilter.selectedTagIds}
-              selectedTagNames={state.selectedTagNames}
-              onToggleTag={tagFilter.toggleTag}
-              onClearTags={tagFilter.clearTags}
+              tagFilter={tagFilterChips}
               durationDays={checkList.durationDays}
               onStepDays={(delta) => void state.stepDurationDays(delta)}
               onCommitDays={state.changeDurationDays}
@@ -178,7 +178,6 @@ export function ListDetailBody(props: {
               isEmpty={items.length === 0}
               isAllDone={state.isAllDone}
               checkedCount={state.checkedCount}
-              resetLabel={state.resetLabel}
               onReset={() => void state.resetAll()}
               onStartAdding={startAdding}
               getRequiredQuantity={state.getRequiredQuantity}
@@ -195,6 +194,8 @@ export function ListDetailBody(props: {
           isDisabled={isBusy}
           onMoveToCategory={() => setSheet(DETAIL_SHEET.BULK_CATEGORY)}
           onEditTags={() => setSheet(DETAIL_SHEET.BULK_TAGS)}
+          isAllHidden={edit.isAllSelectedHidden}
+          onToggleHidden={() => void edit.toggleSelectedHidden()}
           onDelete={() => void edit.removeItems(edit.selectedItems)}
         />
       )}
@@ -206,39 +207,20 @@ export function ListDetailBody(props: {
         isLifted={hasSelection}
       />
 
-      {sheet === DETAIL_SHEET.MENU && (
-        <ListMenuSheet
-          resetLabel={state.resetLabel}
-          canReset={state.checkedCount > 0}
-          csvHref={buildListPath(checkList.id, LIST_SECTION.CSV)}
-          onRename={() => setSheet(DETAIL_SHEET.RENAME)}
-          onReset={() => {
-            closeSheet();
-            void state.resetAll();
-          }}
-          onClose={closeSheet}
-        />
-      )}
-      {sheet === DETAIL_SHEET.RENAME && (
-        <RenameSheet
-          name={checkList.name}
-          isDisabled={isBusy}
-          onSave={state.renameList}
-          onClose={closeSheet}
-        />
-      )}
       {editingItem && (
         <ItemEditSheet
           item={editingItem}
           categories={category.sortedCategories}
-          tags={tags}
+          tags={tag.sortedTags}
           attachedTagIds={edit.getAttachedTagIds(editingItem)}
+          isHidden={edit.isItemHidden(editingItem)}
           isDisabled={isBusy}
           {...edit.getOrderBounds(editingItem)}
           onRename={(name) => edit.renameItem(editingItem, name)}
           onChangeQuantity={(text) => edit.changeQuantity(editingItem, text)}
           onMoveToCategory={(target) => void edit.moveItem(editingItem, target)}
           onToggleTag={(tagId) => void edit.toggleItemTag(editingItem, tagId)}
+          onToggleHidden={() => void edit.toggleItemHidden(editingItem)}
           onReorder={(delta) => void edit.reorderItem(editingItem, delta)}
           onDelete={() => {
             setEditingItemId(null);
@@ -253,7 +235,9 @@ export function ListDetailBody(props: {
           blocked={category.blocked}
           isDisabled={isBusy}
           onRename={category.rename}
-          onMove={(target, direction) => void category.move(target, direction)}
+          onMove={(categoryId, targetId) =>
+            void category.move(categoryId, targetId)
+          }
           onRemove={(target) => void category.remove(target)}
           onAdd={category.add}
           onCloseBlocked={category.closeBlocked}
@@ -265,10 +249,11 @@ export function ListDetailBody(props: {
       )}
       {sheet === DETAIL_SHEET.TAGS && (
         <TagSheet
-          tags={tag.tags}
+          tags={tag.sortedTags}
           blocked={tag.blocked}
           isDisabled={isBusy}
           onRename={tag.rename}
+          onMove={(tagId, targetId) => void tag.move(tagId, targetId)}
           onRemove={(target) => void tag.remove(target)}
           onAdd={tag.add}
           onCloseBlocked={tag.closeBlocked}
@@ -281,7 +266,7 @@ export function ListDetailBody(props: {
       {sheet === DETAIL_SHEET.BULK_TAGS && (
         <BulkTagSheet
           selectedCount={edit.selectedItemIds.length}
-          tags={tags}
+          tags={tag.sortedTags}
           isDisabled={isBusy}
           isAttachedToAll={edit.isTagAttachedToAllSelected}
           onToggle={(target) => void edit.toggleSelectedTag(target)}

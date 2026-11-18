@@ -2,7 +2,6 @@ import { Check } from "lucide-react";
 
 import { RowTag } from "@/src/app/components/list-detail/row-tag";
 import type { Item } from "@/src/app/models/item";
-import type { ItemTagLabel } from "@/src/app/models/item-tag-label";
 import { cn } from "@/src/lib/shadcn/utils";
 
 /**
@@ -17,8 +16,8 @@ export function CheckRow(props: {
   requiredQuantity: number | null;
   /** 日数 */
   durationDays: number;
-  /** 右端に出す行き先 */
-  tagLabel: ItemTagLabel | null;
+  /** 右端に出すタグ */
+  tagLabel: string | null;
   /** チェック状態の切り替え */
   onToggle: () => void;
 }) {

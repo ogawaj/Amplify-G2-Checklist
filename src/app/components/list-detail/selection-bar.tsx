@@ -12,8 +12,12 @@ export function SelectionBar(props: {
   isDisabled: boolean;
   /** カテゴリへ移動するシートを開く */
   onMoveToCategory: () => void;
-  /** 行き先を付け外しするシートを開く */
+  /** タグを付け外しするシートを開く */
   onEditTags: () => void;
+  /** 選択中の持ち物がすべて非表示か（true なら表示に戻す操作になる） */
+  isAllHidden: boolean;
+  /** 選択中の持ち物をまとめて非表示にする、または表示に戻す */
+  onToggleHidden: () => void;
   /** 選択中の持ち物を削除する */
   onDelete: () => void;
 }) {
@@ -30,7 +34,7 @@ export function SelectionBar(props: {
             isDisabled={props.isDisabled}
             onClick={props.onMoveToCategory}
           >
-            カテゴリへ移動
+            カテゴリ
           </ActionButton>
           <ActionButton
             variant="outline"
@@ -38,7 +42,15 @@ export function SelectionBar(props: {
             isDisabled={props.isDisabled}
             onClick={props.onEditTags}
           >
-            行き先
+            タグ
+          </ActionButton>
+          <ActionButton
+            variant="outline"
+            className="flex-1 px-2 text-[15px]"
+            isDisabled={props.isDisabled}
+            onClick={props.onToggleHidden}
+          >
+            {props.isAllHidden ? "表示" : "非表示"}
           </ActionButton>
           <ActionButton
             variant="danger"

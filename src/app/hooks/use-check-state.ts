@@ -6,12 +6,9 @@ import type { useDetailFeedback } from "@/src/app/hooks/use-detail-feedback";
 import type { useTagFilter } from "@/src/app/hooks/use-tag-filter";
 import type { CheckListDetail } from "@/src/app/models/check-list-detail";
 import type { Item } from "@/src/app/models/item";
-import type { ItemTagLabel } from "@/src/app/models/item-tag-label";
+import { updateDurationDays } from "@/src/app/services/check-list-service";
 import {
-  renameCheckList,
-  updateDurationDays,
-} from "@/src/app/services/check-list-service";
-import {
+  excludeHiddenItems,
   filterItemsByTags,
   groupItemsByCategory,
   summarizeProgress,
@@ -23,15 +20,16 @@ import {
   restoreCheckedItems,
   updateItem,
 } from "@/src/app/services/item-service";
-import { keyBy, mergeById } from "@/src/app/utils/array-utils";
+import { sortTags } from "@/src/app/services/tag-service";
+import { mergeById } from "@/src/app/utils/array-utils";
 import { parseInteger } from "@/src/app/utils/integer-utils";
 import { buildItemTagLabel } from "@/src/app/utils/item-tag-label-utils";
 
 /**
- * 準備モードの状態（タグ絞り込み・チェック操作・取り消し付きの一括リセット・日数・名前）を管理するフック
+ * 準備モードの状態（タグ絞り込み・チェック操作・取り消し付きの一括リセット・日数）を管理するフック
  * @param detail - 読み込み済みのチェックリスト詳細
  * @param feedback - 操作の結果を伝える仕組み
- * @param tagFilter - 絞り込みに使うタグの選択状態
+ * @param tagFilter - 絞り込みに使うタグの表示状態
  * @returns 表示用に整えた持ち物・件数と各操作
  */
 export const useCheckState = (
@@ -40,13 +38,12 @@ export const useCheckState = (
   tagFilter: ReturnType<typeof useTagFilter>,
 ) => {
   const { checkList, categories, tags, items, setItems, setCheckList } = detail;
-  const { run, reportError, reportPartialFailure, notify, notifyUndoable } =
-    feedback;
-  const { selectedTagIds } = tagFilter;
+  const { run, reportError, reportPartialFailure, notifyUndoable } = feedback;
+  const { visibility } = tagFilter;
 
   const visibleItems = useMemo(
-    () => filterItemsByTags(items, selectedTagIds),
-    [items, selectedTagIds],
+    () => filterItemsByTags(excludeHiddenItems(items), visibility),
+    [items, visibility],
   );
   const groups = useMemo(
     () => groupItemsByCategory(categories, visibleItems, true),
@@ -57,27 +54,18 @@ export const useCheckState = (
     [visibleItems],
   );
   const totalProgress = useMemo(() => summarizeProgress(items), [items]);
-  const tagsById = useMemo(() => keyBy(tags, (tag) => tag.id), [tags]);
-  const selectedTagNames = selectedTagIds.flatMap(
-    (tagId) => tagsById.get(tagId)?.name ?? [],
-  );
+  const sortedTags = useMemo(() => sortTags(tags), [tags]);
 
-  const isFiltered = selectedTagIds.length > 0;
   const remainingCount =
     visibleProgress.totalCount - visibleProgress.checkedCount;
   const isAllDone = visibleProgress.totalCount > 0 && remainingCount === 0;
   const checkedCount = totalProgress.checkedCount;
-  const hiddenCheckedCount = checkedCount - visibleProgress.checkedCount;
-  const resetLabel =
-    isFiltered && hiddenCheckedCount > 0
-      ? `チェックを外す（${checkedCount}件・隠れている${hiddenCheckedCount}件を含む）`
-      : `チェックを外す（${checkedCount}件）`;
 
   const getRequiredQuantity = (item: Item): number | null =>
     calculateRequiredQuantity(item.quantityPerDay, checkList.durationDays);
 
-  const getTagLabel = (item: Item): ItemTagLabel | null =>
-    buildItemTagLabel(getItemTagIds(item), tagsById, selectedTagIds);
+  const getTagLabel = (item: Item): string | null =>
+    buildItemTagLabel(getItemTagIds(item), sortedTags);
 
   const replaceItemChecked = (itemId: string, isChecked: boolean) =>
     setItems((current) =>
@@ -164,34 +152,16 @@ export const useCheckState = (
     await changeDurationDays(String(checkList.durationDays + delta));
   };
 
-  const renameList = async (name: string): Promise<boolean> => {
-    const previous = checkList;
-    setCheckList({ ...previous, name });
-    const isSaved = await run(async () => {
-      await renameCheckList(previous.id, name);
-    }, "名前を変更できませんでした");
-    if (isSaved) {
-      notify("名前を変更しました");
-    } else {
-      setCheckList(previous);
-    }
-    return isSaved;
-  };
-
   return {
     groups,
-    selectedTagNames,
-    isFiltered,
     remainingCount,
     isAllDone,
     checkedCount,
-    resetLabel,
     getRequiredQuantity,
     getTagLabel,
     toggleChecked,
     resetAll,
     changeDurationDays,
     stepDurationDays,
-    renameList,
   };
 };

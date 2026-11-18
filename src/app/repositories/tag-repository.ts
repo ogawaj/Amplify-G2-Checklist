@@ -24,24 +24,24 @@ export const listTags = async (checkListId: string): Promise<Tag[]> => {
 
 /**
  * タグを作成する
- * @param input - 所属チェックリストIDと名称
+ * @param input - 所属チェックリストID・名称・表示順（省略すると未設定）
  * @returns 作成したタグ
  * @throws {unknown} AppSyncのエラーをそのまま投げる
  */
 export const createTag = async (
-  input: Pick<Tag, "checkListId" | "name">,
+  input: Pick<Tag, "checkListId" | "name"> & Partial<Pick<Tag, "sortOrder">>,
 ): Promise<Tag> => {
   return unwrapData(await client.models.Tag.create(input));
 };
 
 /**
- * タグを更新する
- * @param input - 更新対象のIDと名称
+ * タグを更新する。省略した項目は更新されない
+ * @param input - 更新対象のIDと変更項目
  * @returns 更新後のタグ
  * @throws {unknown} AppSyncのエラーをそのまま投げる
  */
 export const updateTag = async (
-  input: Pick<Tag, "id" | "name">,
+  input: Pick<Tag, "id"> & Partial<Pick<Tag, "name" | "sortOrder">>,
 ): Promise<Tag> => {
   return unwrapData(await client.models.Tag.update(input));
 };

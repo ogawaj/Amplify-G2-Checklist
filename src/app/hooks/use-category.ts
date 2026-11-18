@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 
 import type { CategoryDeleteBlocker } from "@/src/app/enums/category-delete-blocker";
 import { CATEGORY_DELETE_BLOCKER } from "@/src/app/enums/category-delete-blocker";
-import type { CategoryMoveDirection } from "@/src/app/enums/category-move-direction";
 import type { useDetailFeedback } from "@/src/app/hooks/use-detail-feedback";
 import type { BlockedDeletion } from "@/src/app/models/blocked-deletion";
 import type { Category } from "@/src/app/models/category";
@@ -14,6 +13,7 @@ import {
   deleteCategory,
   getCategoryDeleteBlocker,
   moveCategory,
+  planCategoryMove,
   renameCategory,
   restoreCategory,
   sortCategories,
@@ -82,13 +82,16 @@ export const useCategory = (
   };
 
   const move = async (
-    category: Category,
-    direction: CategoryMoveDirection,
+    categoryId: string,
+    targetCategoryId: string,
   ): Promise<void> => {
+    setCategories(planCategoryMove(categories, categoryId, targetCategoryId));
     const isMoved = await run(async () => {
-      setCategories(await moveCategory(categories, category.id, direction));
+      setCategories(
+        await moveCategory(categories, categoryId, targetCategoryId),
+      );
     }, "並び順を変更できませんでした");
-    if (isMoved) notify("並び順を変更しました");
+    if (!isMoved && !(await detail.reload())) setCategories(categories);
   };
 
   const undoRemove = async (deleted: Category): Promise<void> => {

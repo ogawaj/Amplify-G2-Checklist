@@ -9,6 +9,7 @@ import { InlineText } from "@/src/app/components/common/inline-text";
 import { LoadingMessage } from "@/src/app/components/common/loading-message";
 import { NoticeBanner } from "@/src/app/components/common/notice-banner";
 import { ScreenHeader } from "@/src/app/components/common/screen-header";
+import { SortableList } from "@/src/app/components/common/sortable-list";
 import { useCheckLists } from "@/src/app/hooks/use-check-lists";
 import type { CheckList } from "@/src/app/models/check-list";
 
@@ -37,24 +38,30 @@ export function CheckListScreen() {
           チェックリストがありません。下の入力欄から作成してください。
         </p>
       )}
-      <div className="grid gap-3 md:grid-cols-2">
-        {lists.checkLists.map((checkList) => (
-          <CheckListCard
-            key={checkList.id}
-            checkList={checkList}
-            isRenaming={renamingId === checkList.id}
-            isBusy={lists.isPending}
-            onRename={(name) => lists.rename(checkList.id, name)}
-            onStartRename={() => setRenamingId(checkList.id)}
-            onEndRename={() => setRenamingId(null)}
-            onDuplicate={() => {
-              setProgressLabel("複製中");
-              void lists.duplicate(checkList.id);
-            }}
-            onDelete={() => setDeleteTarget(checkList)}
-          />
-        ))}
-      </div>
+      <SortableList
+        items={lists.checkLists}
+        isGrid
+        onMove={(id, targetId) => void lists.move(id, targetId)}
+      >
+        <div className="grid gap-3 md:grid-cols-2">
+          {lists.checkLists.map((checkList) => (
+            <CheckListCard
+              key={checkList.id}
+              checkList={checkList}
+              isRenaming={renamingId === checkList.id}
+              isBusy={lists.isPending}
+              onRename={(name) => lists.rename(checkList.id, name)}
+              onStartRename={() => setRenamingId(checkList.id)}
+              onEndRename={() => setRenamingId(null)}
+              onDuplicate={() => {
+                setProgressLabel("複製中");
+                void lists.duplicate(checkList.id);
+              }}
+              onDelete={() => setDeleteTarget(checkList)}
+            />
+          ))}
+        </div>
+      </SortableList>
       <InlineText
         value=""
         ariaLabel="新しいチェックリスト名"
