@@ -40,10 +40,9 @@ export function CheckListScreen() {
       )}
       <SortableList
         items={lists.checkLists}
-        isGrid
         onMove={(id, targetId) => void lists.move(id, targetId)}
       >
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="flex flex-col gap-3">
           {lists.checkLists.map((checkList) => (
             <CheckListCard
               key={checkList.id}

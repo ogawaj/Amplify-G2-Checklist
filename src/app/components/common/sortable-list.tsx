@@ -13,7 +13,6 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import {
-  rectSortingStrategy,
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
@@ -36,15 +35,13 @@ const SCREEN_READER_INSTRUCTIONS: ScreenReaderInstructions = {
 };
 
 /**
- * ドラッグで並べ替えられる並び。子の要素は SortableRow で items の各IDを登録する
+ * ドラッグで並べ替えられる縦1列の並び（縦方向にだけ動かせる）。子の要素は SortableRow で items の各IDを登録する
  * @param props - プロパティ
  * @returns 並べ替えられる並び
  */
 export function SortableList(props: {
   /** 並んでいる要素のIDと名前（表示順。名前は読み上げに使う） */
   items: { id: string; name: string }[];
-  /** 格子状に並べるか（false なら縦1列で、縦方向にだけ動かせる） */
-  isGrid?: boolean;
   /** 要素を別の要素の位置へ動かしたとき */
   onMove: (id: string, targetId: string) => void;
   /** 要素 */
@@ -84,14 +81,12 @@ export function SortableList(props: {
         announcements,
         screenReaderInstructions: SCREEN_READER_INSTRUCTIONS,
       }}
-      modifiers={props.isGrid ? [] : [restrictToVerticalAxis]}
+      modifiers={[restrictToVerticalAxis]}
       onDragEnd={handleDragEnd}
     >
       <SortableContext
         items={props.items.map((item) => item.id)}
-        strategy={
-          props.isGrid ? rectSortingStrategy : verticalListSortingStrategy
-        }
+        strategy={verticalListSortingStrategy}
       >
         {props.children}
       </SortableContext>

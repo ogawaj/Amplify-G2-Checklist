@@ -34,7 +34,7 @@ export function CheckRow(props: {
         className={cn(
           "grid size-6 shrink-0 place-items-center rounded-full transition duration-200",
           item.isChecked
-            ? "bg-primary text-white"
+            ? "bg-primary text-primary-foreground"
             : "ring-[1.5px] ring-subtle ring-inset",
         )}
       >

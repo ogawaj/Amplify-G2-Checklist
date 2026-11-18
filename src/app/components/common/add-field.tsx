@@ -17,7 +17,7 @@ export function AddField(props: {
 }) {
   return (
     <div className="flex min-h-11 items-center gap-2">
-      <span className="grid size-6 shrink-0 place-items-center rounded-full bg-primary text-white">
+      <span className="grid size-6 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
         <Plus className="size-4" />
       </span>
       <InlineText

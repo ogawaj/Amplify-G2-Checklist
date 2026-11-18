@@ -106,7 +106,7 @@ export function PrepareView(props: {
 
         {props.isAllDone && (
           <div className="flex flex-col items-center py-4 text-center">
-            <span className="mb-3 grid size-12 place-items-center rounded-full bg-primary text-white">
+            <span className="mb-3 grid size-12 place-items-center rounded-full bg-primary text-primary-foreground">
               <Check className="size-6" strokeWidth={3} />
             </span>
             <p className="text-[17px] font-semibold">準備完了</p>

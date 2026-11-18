@@ -51,7 +51,7 @@ export function UndoToast(props: {
           role="status"
           className="pointer-events-auto flex items-center gap-2 rounded-full bg-foreground/90 py-2 pr-2 pl-3 text-[15px] text-background shadow-xl backdrop-blur"
         >
-          <span className="grid size-5 shrink-0 place-items-center rounded-full bg-primary text-white">
+          <span className="grid size-5 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
             <Check className="size-3.5" strokeWidth={3} />
           </span>
           <span className="pr-2">{toast.message}</span>

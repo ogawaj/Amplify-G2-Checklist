@@ -54,7 +54,7 @@ export function EditRow(props: {
               className={cn(
                 "grid size-[22px] place-items-center rounded-md transition",
                 props.isSelected
-                  ? "bg-primary text-white"
+                  ? "bg-primary text-primary-foreground"
                   : "ring-[1.5px] ring-subtle ring-inset",
               )}
             >
